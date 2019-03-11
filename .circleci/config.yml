@@ -28,7 +28,7 @@ jobs:
       - run:
           name: Running tests
           command: |
-            curl --retry 10 --retry-delay 5 -v http://localhost:8007
+            curl --retry 20 --retry-delay 5 -v http://localhost:8007
             docker-compose run app bash -c 'coverage run --omit=*test*,*ven* manage.py test && bash <(curl -s https://codecov.io/bash) && python-codacy-coverage -r coverage.xml'
   deploy:
     <<: *defaults

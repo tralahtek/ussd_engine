@@ -52,7 +52,7 @@ services:
     environment:
       - CELERY_BROKER_URL=amqp://guest:guest@rabbitmq//
       - CODACY_PROJECT_TOKEN=7911468d4aa94f0f941148a355a953d0
-      - CODECOV_TOKEN=b9e923ec-1dea-4111-bc1c-ecaf28c0f0da
+      - CODECOV_TOKEN=e8f2d8cb-b839-4496-a5fb-bff90dcebcdc
       - 'DATABASE_URL=postgres://postgres:django-ussd-airflow@db:5432/django-ussd-airflow'
       - TEST_VARIABLE=variable_test
       - ENVIRONMENT=sample_variable_two

@@ -1,4 +1,4 @@
-from ussd.core import UssdView, UssdRequest,_customer_journey_files, \
+from ussd.core import UssdView, UssdRequest, _customer_journey_files, \
     render_journey_as_mermaid_text, convert_error_response_to_mermaid_error
 from ussd.tests.sample_screen_definition import path
 from django.http import HttpResponse, JsonResponse
@@ -14,8 +14,8 @@ class AfricasTalkingUssdGateway(UssdView):
 
     def post(self, req):
         list_of_inputs = req.data['text'].split("*")
-        text = "*" if len(list_of_inputs) >= 2 and list_of_inputs[-1] == "" and list_of_inputs[-2] == "" else list_of_inputs[
-            -1]
+        text = "*" if len(list_of_inputs) >= 2 and list_of_inputs[-1] == "" and list_of_inputs[-2] == "" else \
+            list_of_inputs[-1]
 
         session_id = req.data['sessionId']
         if req.data.get('use_built_in_session_management', False):
@@ -47,7 +47,7 @@ class AfricasTalkingUssdGateway(UssdView):
 
     def ussd_response_handler(self, ussd_response):
         if self.request.data.get('serviceCode') == 'test':
-            return super(AfricasTalkingUssdGateway, self).\
+            return super(AfricasTalkingUssdGateway, self). \
                 ussd_response_handler(ussd_response)
         if ussd_response.status:
             res = 'CON' + ' ' + str(ussd_response)
@@ -56,6 +56,7 @@ class AfricasTalkingUssdGateway(UssdView):
             res = 'END' + ' ' + str(ussd_response)
             response = HttpResponse(res)
         return response
+
 
 class MermaidText(APIView):
 
@@ -71,6 +72,7 @@ class MermaidText(APIView):
         return JsonResponse({'mermaidText': mermaid_text,
                              'mermaidOptions': mermaid_options})
 
+
 class ValidateJourney(APIView):
 
     def post(self, req):
@@ -83,20 +85,18 @@ class ValidateJourney(APIView):
 
         is_valid, errors = UssdView.validate_ussd_journey(journey)
 
-
         if error_type == 'mermaid_txt':
             errors = convert_error_response_to_mermaid_error(errors)
         return JsonResponse(errors, safe=False)
 
 
 def journey_visual(request):
-    return render(request,'journey_visual.html',{'yaml_files':_customer_journey_files})
-
+    return render(request, 'journey_visual.html', {'yaml_files': _customer_journey_files})
 
 
 def journey_visual_data(request):
-    yaml = request.GET.get('file',_customer_journey_files[0])
-    if yaml == None:
+    yaml = request.GET.get('file', _customer_journey_files[0])
+    if yaml is None:
         return HttpResponse()
     res = YamlToGo(yaml).get_model_data()
-    return HttpResponse(json.dumps(res),content_type='application/json')
+    return HttpResponse(json.dumps(res), content_type='application/json')

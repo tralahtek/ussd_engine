@@ -1,5 +1,5 @@
-from ussd.tests import UssdTestCase
 from ussd.core import ussd_session
+from ussd.tests import UssdTestCase
 
 
 class TestRouterHandler(UssdTestCase.BaseUssdTestCase):
@@ -77,7 +77,6 @@ class TestRouterHandler(UssdTestCase.BaseUssdTestCase):
         )
 
     def test_router_option_with_dict_loop(self):
-
         ussd_client = self.ussd_client(phone_number=206)
 
         self.assertEqual(

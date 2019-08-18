@@ -33,7 +33,6 @@ def report_session(self, session_id, screen_content):
         ussd_report_session_data['request_conf']
     )
 
-
     UssdHandlerAbstract.make_request(
         http_request_conf=request_conf,
         response_session_key_save=ussd_report_session_data['session_key'],
@@ -44,8 +43,8 @@ def report_session(self, session_id, screen_content):
     # check if it is the desired effect
     for expr in ussd_report_session_data['validate_response']:
         if UssdHandlerAbstract.evaluate_jija_expression(
-            expr['expression'],
-            session=session
+                expr['expression'],
+                session=session
         ):
             session['posted'] = True
             session.save()
@@ -54,6 +53,6 @@ def report_session(self, session_id, screen_content):
     if ussd_report_session_data.get('retry_mechanism'):
         try:
             self.retry(**screen_content[
-                    'ussd_report_session']['retry_mechanism'])
+                'ussd_report_session']['retry_mechanism'])
         except MaxRetriesExceededError as e:
             logger.warning("report_session_error", error_message=str(e))

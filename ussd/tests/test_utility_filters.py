@@ -2,7 +2,6 @@ from ussd.tests import UssdTestCase
 
 
 class TestScreensUsingFilters(UssdTestCase.BaseUssdTestCase):
-
     validate_ussd = False
 
     def get_ussd_client(self):

@@ -1,12 +1,14 @@
+import json
+import os
 import uuid
+
 import requests
 import staticconf
-from django.test import LiveServerTestCase, TestCase
+from django.test import LiveServerTestCase
 from django.urls import reverse
+
 from ussd.core import UssdView, load_yaml, render_journey_as_graph, render_journey_as_mermaid_text
 from ussd.tests.sample_screen_definition import path
-import os
-import json
 
 
 class UssdTestCase(object):
@@ -93,7 +95,7 @@ class UssdTestCase(object):
                 namespace = self.namespace + 'mermaid_js'
                 file_path = path + '/' + self.valid_yml
                 load_yaml(file_path, namespace)
-                ussd_screens = staticconf.config.get_namespace(namespace).\
+                ussd_screens = staticconf.config.get_namespace(namespace). \
                     get_config_values()
 
                 mermaid_text_format = render_journey_as_mermaid_text(ussd_screens)
@@ -112,7 +114,6 @@ class UssdTestCase(object):
             with open(file_path) as f:
                 mermaid_text = f.read()
             return mermaid_text
-
 
         def ussd_client(self, generate_customer_journey=True, **kwargs):
             class UssdTestClient(object):

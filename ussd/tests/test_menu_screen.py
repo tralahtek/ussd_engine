@@ -1,10 +1,12 @@
 """
 This module is involved in testing Menu screen only
 """
-from ussd.tests import UssdTestCase
-from ussd.core import ussd_session
 from collections import OrderedDict
+
 from django.test import override_settings
+
+from ussd.core import ussd_session
+from ussd.tests import UssdTestCase
 
 
 class TestMenuHandler(UssdTestCase.BaseUssdTestCase):
@@ -217,9 +219,9 @@ class TestMenuHandler(UssdTestCase.BaseUssdTestCase):
         # choose one ot test native dict items
         response = ussd_client.send('1')
         for i in (
-            "a for apple\n",
-            "b for boy\n",
-            "c for cat\n"
+                "a for apple\n",
+                "b for boy\n",
+                "c for cat\n"
         ):
             self.assertRegex(response, i)
 
@@ -391,12 +393,12 @@ class TestMenuHandler(UssdTestCase.BaseUssdTestCase):
 
     def test_routing_option(self):
         ussd_client = self.ussd_client(phone_number='200')
-        ussd_client.send('') # dial in
-        ussd_client.send('1') # choose food
+        ussd_client.send('')  # dial in
+        ussd_client.send('1')  # choose food
 
         self.assertEqual(
             "screen_one",
-            ussd_client.send('3') # choose option with routing
+            ussd_client.send('3')  # choose option with routing
         )
 
         ussd_client = self.ussd_client(phone_number='201')
@@ -405,5 +407,5 @@ class TestMenuHandler(UssdTestCase.BaseUssdTestCase):
 
         self.assertEqual(
             "screen_two",
-            ussd_client.send('3') # choose option with routing
+            ussd_client.send('3')  # choose option with routing
         )

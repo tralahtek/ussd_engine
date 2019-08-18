@@ -1,12 +1,13 @@
-from django.core.management import call_command
-from django.test import LiveServerTestCase
 import json
 import os
+
 from django.conf.urls import url, include
+from django.core.management import call_command
+from django.test import LiveServerTestCase
 from django.test import TestCase
+from rest_framework.test import APIClient
 
 from ussd_airflow import urls
-from rest_framework.test import APIClient
 
 
 class TestUssdAppIsNotCreated(TestCase):
@@ -38,10 +39,9 @@ class TestUssdAppCreation(LiveServerTestCase):
 
         response = self.client.post(end_point_url,
                                     data=json.dumps(payload),
-                                    content_type="application/json",)
+                                    content_type="application/json", )
         self.assertEqual(response.content,
                          b'END Example Quit Screen. Delete this and define your own customer journey screens.')
         self.assertEqual(response.status_code, 200)
         print(response.status_code)
         os.system('rm -r TestUssdApp')  # Remove created app. Clean up
-

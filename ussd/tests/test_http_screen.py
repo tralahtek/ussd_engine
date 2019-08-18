@@ -1,14 +1,16 @@
-from ussd.tests import UssdTestCase
 from unittest import mock
+
 from django.http.response import JsonResponse, HttpResponse
 from django.test.utils import override_settings
 
+from ussd.tests import UssdTestCase
+
 
 @override_settings(
-        CELERY_EAGER_PROPAGATES_EXCEPTIONS=True,
-        CELERY_ALWAYS_EAGER=True,
-        BROKER_BACKEND='memory'
-    )
+    CELERY_EAGER_PROPAGATES_EXCEPTIONS=True,
+    CELERY_ALWAYS_EAGER=True,
+    BROKER_BACKEND='memory'
+)
 class TestHttpScreen(UssdTestCase.BaseUssdTestCase):
     validation_error_message = dict(
         screen_name="Screen not available",
@@ -103,5 +105,3 @@ class TestHttpScreen(UssdTestCase.BaseUssdTestCase):
             "balance is  and full content Balance is 257.\n",
             ussd_client.send('')
         )
-
-

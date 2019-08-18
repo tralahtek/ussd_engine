@@ -1,5 +1,6 @@
 import attr
 
+
 @attr.s
 class Vertex(object):
     name = attr.ib()
@@ -23,11 +24,9 @@ class Graph(object):
         self.edges = []
         self.missing_vertices = {}
 
-
     def add_vertex(self, vertex: Vertex, **kwargs):
         self.vertices[vertex.name] = dict(id=vertex.name, text=vertex.text)
         self.vertices[vertex.name].update(kwargs)
-
 
         self.missing_vertices.pop(vertex.name, None)
 
@@ -55,7 +54,6 @@ class Graph(object):
         # add name
         raw_vertex['name'] = name
 
-
         return Vertex(**raw_vertex)
 
     def get_edges(self):
@@ -66,14 +64,12 @@ class Graph(object):
         raw_link['end'] = self.get_vertex_obj(raw_link['end'])
         return Link(**raw_link)
 
-
     def __eq__(self, other):
         return self.vertices == other.vertices and \
                self.edges == other.edges
 
 
 def get_mermaid_link_line(link: Link):
-
     if link.stroke == "dotted":
         link_line = "-.->" if link.text == "" \
             else '-."{link_text}".->'.format(link_text=link.text)
@@ -81,6 +77,7 @@ def get_mermaid_link_line(link: Link):
         link_line = "==>" if link.text == "" \
             else '=="{link_text}"==>'.format(link_text=link.text)
     return " " + link_line + " "
+
 
 def get_mermaid_node_text(vertex: Vertex):
     text = vertex.id if vertex.text == "" else \
@@ -102,7 +99,6 @@ def add_mermaid_node_text(vertex: Vertex, added_texts: list):
 
 
 def convert_graph_to_mermaid_text(graph: Graph) -> str:
-
     added_texts = []
 
     mermaid_text = "graph TD\n"
@@ -110,12 +106,11 @@ def convert_graph_to_mermaid_text(graph: Graph) -> str:
     for i in graph.get_edges():
         link = graph.convert_dict_to_link(i)
 
-        # add firt node
+        # add first node
         mermaid_text += add_mermaid_node_text(link.start, added_texts)
 
         # add link
         mermaid_text += get_mermaid_link_line(link)
-
 
         # add second node
         mermaid_text += add_mermaid_node_text(link.end, added_texts)

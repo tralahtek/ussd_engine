@@ -1,12 +1,13 @@
-from ussd.tests import UssdTestCase
-from datetime import datetime
 import calendar
+from datetime import datetime
+
 from freezegun import freeze_time
+
+from ussd.tests import UssdTestCase
 
 
 @freeze_time("2012-01-14")
 class TestScreensUsingFilters(UssdTestCase.BaseUssdTestCase):
-
     validate_ussd = False
 
     def get_ussd_client(self):

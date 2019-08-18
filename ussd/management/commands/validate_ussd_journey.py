@@ -1,8 +1,10 @@
 import staticconf
-from django.core.management.base import BaseCommand, CommandError
-from ussd.core import UssdView, load_yaml
 import os
 import json
+
+from django.core.management.base import BaseCommand, CommandError
+
+from ussd.core import UssdView, load_yaml
 
 
 class Command(BaseCommand):
@@ -15,10 +17,9 @@ class Command(BaseCommand):
         error_message = {}
         for ussd_config in options["ussd_configs"]:
             if not os.path.isfile(ussd_config):
-                raise CommandError("This file path {} does not exist".format(ussd_config))
+                raise CommandError("The file path {} does not exist".format(ussd_config))
             namespace = 'validation'
             load_yaml(ussd_config, namespace)
-
 
             ussd_screens = staticconf.config. \
                 get_namespace(namespace). \

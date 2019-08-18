@@ -8,7 +8,7 @@ Setup
 
     pip install ussd_airflow
 
-- Add **ussd_airflow** in Installed application
+- Add **ussd_airflow** to `INSTALLED_APPS` in your settings file
 
     .. code-block:: python
 
@@ -22,9 +22,9 @@ Setup
 
         SESSION_SERIALIZER = 'django.contrib.sessions.serializers.PickleSerializer'
 
-- Add ussd view to handle ussd request.
-    - To use an existing ussd view that is implemented to handle
-      AfricasTalking ussd gateway
+- Add USSD view to handle USSD requests.
+    - To use an existing USSD view that is implemented to handle
+      AfricasTalking USSD gateway, add this to your `urls.py` file
 
         .. code-block:: python
 
@@ -36,27 +36,27 @@ Setup
                     name='africastalking_url')
                 ]
 
-      To use the existing Africastalking ussd gateway and your own ussd
-      screen. Create a yaml file. On the yaml create your ussd screen.
-      Learn more on how to create ussd screen here :doc:`tutorial`.
-      For quick start copy the below yaml
+      To use this view to serve your USSD screens, create a yaml file and add your USSD screens to it.
+      Learn more on how to create USSD screens here :doc:`tutorial`.
+      For a quick start, copy the below yaml and save it to a location within your application's codebase
 
         .. literalinclude:: .././ussd/tests/sample_screen_definition/sample_customer_journey.yml
 
-      Next step add this to your settings. For ussd airflow to know where your
-      ussd screens files are located.
+      Next, add `DEFAULT_USSD_SCREEN_JOURNEY` to your settings file so as to indicate where your ussd screens
+      files are located.  This should be the location you saved the previously created yaml file
 
         .. code-block:: python
 
             DEFAULT_USSD_SCREEN_JOURNEY = "/file/path/of/the/screen"
 
-      To validate your ussd screen file. Run this command
+      Run the below command to validate your USSD screen file
 
         .. code-block:: text
 
             python manage.py validate_ussd_journey /file/path
 
-      To test the ussd view do this curl request.
+      To test your USSD view, you can use cURL as shown below
+      (you can also use an application such as Postman for this).
 
       .. code-block:: text
 
@@ -67,6 +67,6 @@ Setup
         "serviceCode": "312"}'
         "http://{your_host}/{you_path}/africastalking_gateway"
 
-    - To create your own Ussd View.
+    - To create your own USSD view, you can use this as an example.
             .. autoclass:: ussd.core.UssdView
 

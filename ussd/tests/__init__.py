@@ -46,7 +46,7 @@ class UssdTestCase(object):
 
                 is_valid, error_message = UssdView.validate_ussd_journey(
                     ussd_screens)
-
+                import ipdb; ipdb.set_trace()
                 self.assertEqual(is_valid, expected_validation, error_message)
 
                 self.assertDictEqual(error_message,

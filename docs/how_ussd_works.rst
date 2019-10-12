@@ -13,23 +13,20 @@ menu-based information services, or even as part of configuring the phone on the
 From the diagram above, a request is sent from a mobile phone to a telecom network
 such Vodafone.
 
-The Ussd Gateway (telecom) then sends the request to your ussd application
-(i.e where we have the business logic which determines the menu to serve the use on
-receiving user’s request.)
+The USSD Gateway (telecom) then sends the request to your USSD application
+(i.e where we have the business logic to determine the menu to serve on receiving the incoming request.)
 
-Your ussd application then responds to the request, and Ussd gateway goes ahead and
-displays your content to the user
+Your USSD application then responds to the request, and the USSD gateway displays your content to the user
 
 Below is a another diagram to help understand the concept
 
 .. image:: ./img/another_example_how_ussd_works.gif
 
 ================
-Why Ussd Airflow
+Why USSD Airflow
 ================
 
-Before I explain why we need Ussd Airflow lets
-first look at one example of ussd user case
+Before I explain why we need USSD Airflow lets first look at one example of a use-case
 
 Example Menu-Driven USSD Application
 -------------------------------------
@@ -40,9 +37,10 @@ view his/her current mobile account balance and top up as needed.
 
 An example of such an application could be as follows:
 
-#. A mobile user initiates the “Balance Enquiry and Top Up” service by dialing the USSD string defined by the service provider; for example, *#123#.
+#. A mobile user initiates the “Balance Enquiry and Top Up” service by dialing the USSD string defined by the
+   service provider; for example, *123#.
 
-#. TheUSSD application receives the service request from the user and responds by sending the user a menu of options.
+#. The USSD application receives the service request from the user and responds by sending the user a menu of options.
 
 #. The user responds by selecting a “current balance” option.
 
@@ -64,22 +62,18 @@ a mobile user’s handset and the USSD application to implement the
 .. image:: ./img/example_of_menu_driven_ussd_application.png
 
 
-How ussd airflow comes in
+Why ussd_airflow?
 --------------------------
-As you have seen in the previous section your ussd application is responsible for the content
-displayed.
+As you have seen in the previous section your USSD application is responsible for the content displayed.
 
-Suppose you want to change the wordings in the ussd screen you are displaying
-to the user,what is involved in most cases or rather all cases is you
-make a change in your code and deploy, that's peanuts for most developers
+Suppose you want to change the wording in one the USSD screens you are displaying
+to the user, what is involved in most cases, or rather, all cases is that you
+make a change in your code and deploy, and that's peanuts for most developers
 
-The problem is once you start having many ussd screens and multiple ussd application
-and many requirements of changing ussd screen,
-the task that was peanuts becomes overwhelming and would probably start thinking
-of a way the Product owners would change the ussd content without you being involved
-and thats where **ussd aiflow** comes in, providing an interface for users to change
-ussd workflows without code change
+The problem is once you start having many USSD screens and multiple USSD application
+and many requirements of changing USSD screen.
 
-
-
-
+The once simple task becomes overwhelming and would probably need you to think
+of a way that non-developers would change the USSD content without a developer being involved.
+This is where **ussd aiflow** comes in, providing an interface for users to change
+USSD screens without code changes

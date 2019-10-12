@@ -1,5 +1,5 @@
-from ussd.tests import UssdTestCase
 from ussd.core import ussd_session
+from ussd.tests import UssdTestCase
 
 
 class TestUpdateSessionScreen(UssdTestCase.BaseUssdTestCase):

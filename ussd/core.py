@@ -1,35 +1,37 @@
 """
 Comming soon
 """
-from urllib.parse import unquote
-from copy import copy, deepcopy
-from rest_framework.views import APIView
-from django.http import HttpResponse
-from structlog import get_logger
-import staticconf
-from django.conf import settings
-from importlib import import_module
-from django.contrib.sessions.backends import signed_cookies
-from django.contrib.sessions.backends.base import CreateError
-from jinja2 import Template, Environment, TemplateSyntaxError
-from .screens.serializers import UssdBaseSerializer
-from rest_framework.serializers import SerializerMetaclass
-import re
+import inspect
 import json
 import os
-from configure import Configuration
-from datetime import datetime
-from ussd.models import SessionLookup
-from annoying.functions import get_object_or_None
-from ussd import defaults as ussd_airflow_variables
-from django.utils import timezone
-import requests
-import inspect
-from ussd.tasks import report_session
-from ussd import utilities
-from .graph import Graph, Link, Vertex, convert_graph_to_mermaid_text
-from collections import namedtuple
+import re
 import typing
+from collections import namedtuple
+from copy import copy
+from datetime import datetime
+from importlib import import_module
+from urllib.parse import unquote
+
+import requests
+import staticconf
+from annoying.functions import get_object_or_None
+from django.conf import settings
+from django.contrib.sessions.backends import signed_cookies
+from django.contrib.sessions.backends.base import CreateError
+from django.http import HttpResponse
+from django.utils import timezone
+from jinja2 import Template, Environment
+from rest_framework.serializers import SerializerMetaclass
+from rest_framework.views import APIView
+from structlog import get_logger
+
+from ussd import defaults as ussd_airflow_variables
+from ussd import utilities
+from ussd.models import SessionLookup
+from ussd.tasks import report_session
+from ussd.utilities import YamlToGo
+from .graph import Graph, Link, Vertex, convert_graph_to_mermaid_text
+from .screens.serializers import UssdBaseSerializer
 
 _registered_ussd_handlers = {}
 _registered_filters = {}
@@ -97,10 +99,9 @@ def generate_session_id():
 
 def load_yaml(file_path, namespace):
     file_path = Template(file_path).render(os.environ)
-    yaml_dict = Configuration.from_file(
-            os.path.abspath(file_path),
-            configure=False
-        )
+
+    yaml_dict = YamlToGo(os.path.abspath(file_path)).yaml
+
     staticconf.DictConfiguration(
         yaml_dict,
         namespace=namespace,
@@ -143,6 +144,7 @@ class UssdRequest(object):
             # accessing kwarg argument
             ussdRequest.name
     """
+
     def __init__(self, session_id, phone_number,
                  ussd_input, language, default_language=None,
                  use_built_in_session_management=False,
@@ -199,7 +201,6 @@ class UssdRequest(object):
         for key, value in kwargs.items():
             setattr(self, key, value)
 
-
     def forward(self, handler_name):
         """
         Forwards a copy of the current request to a new
@@ -242,14 +243,11 @@ class UssdRequest(object):
             inactivity_duration = (datetime.now() - last_updated).total_seconds()
             if inactivity_duration > self.expiry or \
                     session.get(ussd_airflow_variables.expiry):
-
                 # update session_mapping with the new session_id
                 session_mapping.session_id = generate_session_id()
                 session_mapping.save()
 
         return session_mapping.session_id
-
-
 
 
 class UssdResponse(object):
@@ -265,6 +263,7 @@ class UssdResponse(object):
     :param session:
         This is the session object of the ussd session
     """
+
     def __init__(self, text, status=True, session=None):
         self.text = text
         self.status = status
@@ -278,12 +277,12 @@ class UssdResponse(object):
 
 
 class UssdViewMetaClass(type):
-    def __init__(cls,name,bases,attr,**kwargs):
-        super(UssdViewMetaClass,cls).__init__(
-            name,bases,attr)
-        path = getattr(cls,'customer_journey_conf')
+    def __init__(cls, name, bases, attr, **kwargs):
+        super(UssdViewMetaClass, cls).__init__(
+            name, bases, attr)
+        path = getattr(cls, 'customer_journey_conf')
         if path is not None:
-            _customer_journey_files.append(getattr(cls,'customer_journey_conf'))
+            _customer_journey_files.append(getattr(cls, 'customer_journey_conf'))
 
 
 class UssdHandlerMetaClass(type):
@@ -349,7 +348,7 @@ class UssdHandlerAbstract(object, metaclass=UssdHandlerMetaClass):
                 self.pagination_config.get('back_option', "back\n")
             )
         )
-        self.ussd_text_limit = self.pagination_config.\
+        self.ussd_text_limit = self.pagination_config. \
             get("ussd_text_limit", ussd_airflow_variables.ussd_text_limit)
 
     def handle(self):
@@ -408,6 +407,7 @@ class UssdHandlerAbstract(object, metaclass=UssdHandlerMetaClass):
         return self.ussd_request.forward(
             self.screen_content['default_next_screen']
         )
+
     @staticmethod
     def get_session_items(session) -> dict:
         return dict(iter(session.items()))
@@ -449,15 +449,15 @@ class UssdHandlerAbstract(object, metaclass=UssdHandlerMetaClass):
         return json.dumps(text) if encode is 'json' else text
 
     def get_text(self, text_context=None):
-        text_context = self.screen_content.get('text')\
-                       if text_context is None \
-                       else text_context
+        text_context = self.screen_content.get('text') \
+            if text_context is None \
+            else text_context
 
         if isinstance(text_context, dict):
             language = (self.ussd_request.session.get('override_language') or self.ussd_request.language) \
-                   if self.ussd_request.language \
-                          in text_context.keys() \
-                   else self.ussd_request.default_language
+                if self.ussd_request.language \
+                   in text_context.keys() \
+                else self.ussd_request.default_language
             text_context = text_context[language]
 
         if self.raw_text:
@@ -497,7 +497,7 @@ class UssdHandlerAbstract(object, metaclass=UssdHandlerMetaClass):
         # adding screen name in context might be needed by validator
         ussd_content['screen_name'] = screen_name
         validation = cls.serializer(data=screen_content,
-                                     context=ussd_content)
+                                    context=ussd_content)
         del ussd_content['screen_name']
         if validation.is_valid():
             return True, {}
@@ -562,8 +562,8 @@ class UssdHandlerAbstract(object, metaclass=UssdHandlerMetaClass):
             if not i[0].startswith('_'):
                 # Ignores methods
                 if not inspect.ismethod(i[1]) and \
-                                type(i[1]) in \
-                                (str, dict, int, dict, float, list, tuple):
+                        type(i[1]) in \
+                        (str, dict, int, dict, float, list, tuple):
                     if len(i) == 2:
                         response_varialbes.update(
                             {i[0]: i[1]}
@@ -585,6 +585,7 @@ class UssdHandlerAbstract(object, metaclass=UssdHandlerMetaClass):
         )
 
         return response_varialbes
+
     @classmethod
     def make_request(cls, http_request_conf, response_session_key_save,
                      session, logger=None
@@ -596,7 +597,7 @@ class UssdHandlerAbstract(object, metaclass=UssdHandlerMetaClass):
         logger.info("sending_request", **http_request_conf)
         response = requests.request(**http_request_conf)
         logger.info("response", status_code=response.status_code,
-                         content=response.content)
+                    content=response.content)
 
         response_to_save = cls.get_variables_from_response_obj(response)
 
@@ -607,7 +608,7 @@ class UssdHandlerAbstract(object, metaclass=UssdHandlerMetaClass):
 
     @staticmethod
     def fire_ussd_report_session_task(initial_screen: dict, session_id: str,
-                            support_countdown=True):
+                                      support_countdown=True):
         ussd_report_session = initial_screen['ussd_report_session']
         args = (session_id,)
         kwargs = {'screen_content': initial_screen}
@@ -649,10 +650,11 @@ class UssdHandlerAbstract(object, metaclass=UssdHandlerMetaClass):
                     handler = self.get_handler(next_screen_content['type'])
                     handler(self.ussd_request, i.end.name, next_screen_content,
                             self.initial_screen, raw_text=self.raw_text). \
-                    render_graph(ussd_journey, graph)
+                        render_graph(ussd_journey, graph)
 
 
 NextScreens = namedtuple("NextScreens", "next_screens links")
+
 
 class UssdView(APIView, metaclass=UssdViewMetaClass):
     """
@@ -762,7 +764,7 @@ class UssdView(APIView, metaclass=UssdViewMetaClass):
                                    "customer_journey_namespace are required")
 
         if not self.customer_journey_namespace in \
-                staticconf.config.configuration_namespaces:
+               staticconf.config.configuration_namespaces:
             load_yaml(
                 self.customer_journey_conf,
                 self.customer_journey_namespace
@@ -781,7 +783,7 @@ class UssdView(APIView, metaclass=UssdViewMetaClass):
             file_path = variable_conf['file']
             namespace = variable_conf['namespace']
             if not namespace in \
-                    staticconf.config.configuration_namespaces:
+                   staticconf.config.configuration_namespaces:
                 load_yaml(file_path, namespace)
 
         self.initial_screen = initial_screen \
@@ -836,7 +838,7 @@ class UssdView(APIView, metaclass=UssdViewMetaClass):
         # Save session
         ussd_request.session.save()
         self.logger.debug('gateway_response', text=ussd_response.dumps(),
-                     input="{redacted}")
+                          input="{redacted}")
 
         return ussd_response
 
@@ -845,7 +847,6 @@ class UssdView(APIView, metaclass=UssdViewMetaClass):
         handler = ussd_request.session['_ussd_state']['next_screen'] \
             if ussd_request.session.get('_ussd_state', {}).get('next_screen') \
             else "initial_screen"
-
 
         ussd_response = (ussd_request, handler)
 

@@ -1,9 +1,9 @@
 import sys
-from django.test.runner import DiscoverRunner
-from django.core import management
 from os import environ
-from django.conf import settings
 
+from django.conf import settings
+from django.core import management
+from django.test.runner import DiscoverRunner
 
 if sys.argv[1] == "test":
     # patch DiscoverRunner setup database to be able to create

@@ -13,9 +13,7 @@ class TestMultiLanguage(UssdTestCase.BaseUssdTestCase):
         )
 
     def test_multilanguage_support(self):
-
         ussd_client = self.ussd_client(language='sw')
-
 
         # Dial in
         response = ussd_client.send('')

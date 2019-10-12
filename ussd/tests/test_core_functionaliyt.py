@@ -1,16 +1,17 @@
+import time
+from collections import OrderedDict
+from datetime import datetime
+
 from django.test import TestCase
+from freezegun import freeze_time
+from rest_framework import serializers
+
+from ussd import defaults as ussd_airflow_variables
 from ussd.core import _registered_ussd_handlers, \
     UssdHandlerAbstract, MissingAttribute, \
-    InvalidAttribute, UssdRequest, ussd_session, UssdView, \
-    convert_error_response_to_mermaid_error
-from rest_framework import serializers
+    InvalidAttribute, UssdRequest, ussd_session, convert_error_response_to_mermaid_error
 from ussd.tests import UssdTestCase
-from freezegun import freeze_time
-from datetime import datetime
-import time
-from ussd import defaults as ussd_airflow_variables
 from ussd.utilities import datetime_to_string, string_to_datetime
-from collections import OrderedDict
 
 
 class SampleSerializer(serializers.Serializer):
@@ -41,6 +42,7 @@ class TestHandlerRegistration(TestCase):
             # missing screen_type
             class TestTwo(UssdHandlerAbstract):
                 serializer = SampleSerializer
+
                 def handle(self, req):
                     pass
 
@@ -55,7 +57,6 @@ class TestHandlerRegistration(TestCase):
             # missing validate schema
             class TestFour(UssdHandlerAbstract):
                 screen_type = 'test_four'
-
 
             assert False, "should raise missing attriute name"
         except MissingAttribute:
@@ -72,7 +73,6 @@ class TestHandlerRegistration(TestCase):
 
                 def handle(self, req):
                     pass
-
 
             assert False, "should raise invalid serializer"
         except InvalidAttribute:
@@ -96,7 +96,6 @@ class TestUssdRequestCreation(TestCase):
                           '200',
                           '',
                           'en')
-
 
         # session_id and using custom session_id can't been defined
         self.assertRaises(
@@ -343,7 +342,6 @@ class TestSessionManagement(UssdTestCase.BaseUssdTestCase):
         )
 
     def test_quit_screen_terminates_session(self):
-
         ussd_client = self.get_client()
 
         self.assertEqual(
@@ -369,7 +367,6 @@ class TestSessionManagement(UssdTestCase.BaseUssdTestCase):
         )
 
     def test_session_expiry_on_ussd(self):
-
         ussd_client = self.get_client()
 
         self.assertEqual(
@@ -395,7 +392,6 @@ class TestCommonFunctionality(TestCase):
         self.assertEqual(now, string_to_datetime(now_str))
 
     def test_converting_error_response_to_mermaid_error(self):
-
         d = OrderedDict()
         d['e'] = ["e is required", "e is invalid"]
 
@@ -411,7 +407,6 @@ class TestCommonFunctionality(TestCase):
         h = OrderedDict()
         h['h'] = ["This field is required."]
         error_response_sample['g'] = h
-
 
         unordered_dict = dict(
             a=["a is invalid"],

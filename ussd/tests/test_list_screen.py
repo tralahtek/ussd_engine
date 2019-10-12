@@ -2,7 +2,6 @@
 This module test list screens
 """
 
-
 from django.test import LiveServerTestCase
 
 

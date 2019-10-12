@@ -1,9 +1,8 @@
-from ussd.tests import UssdTestCase
 from ussd import VERSION
+from ussd.tests import UssdTestCase
 
 
 class TestScreenUsing(UssdTestCase.BaseUssdTestCase):
-
     validate_ussd = False
 
     def get_ussd_client(self):

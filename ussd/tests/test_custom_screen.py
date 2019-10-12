@@ -1,10 +1,10 @@
+from rest_framework import serializers
+
 from ussd.core import UssdHandlerAbstract
+from ussd.graph import Link, Vertex
 from ussd.screens.serializers import UssdBaseSerializer, \
     NextUssdScreenSerializer
-from rest_framework import serializers
 from ussd.tests import UssdTestCase
-from ussd.core import UssdResponse
-from ussd.graph import Link, Vertex
 
 
 class InvalidCustomHandler(object):
@@ -13,6 +13,7 @@ class InvalidCustomHandler(object):
 
 class SampleCustomHandler1(UssdHandlerAbstract):
     abstract = True  # don't register custom classes
+
     @staticmethod
     def show_ussd_content():  # This method doesn't have to be static
         # Do anything custom here.
@@ -30,7 +31,7 @@ class SampleCustomHandler1(UssdHandlerAbstract):
 
 
 class SampleSerializer(UssdBaseSerializer, NextUssdScreenSerializer):
-        input_identifier = serializers.CharField(max_length=100)
+    input_identifier = serializers.CharField(max_length=100)
 
 
 class SampleCustomHandlerWithSerializer(UssdHandlerAbstract):

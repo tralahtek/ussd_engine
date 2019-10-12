@@ -1,11 +1,13 @@
-from ussd.tests import UssdTestCase, TestCase
 from unittest import mock
-from django.test import override_settings
+from uuid import uuid4
+
+from celery.exceptions import MaxRetriesExceededError
 from django.http.response import JsonResponse
+from django.test import override_settings
+
 from ussd.core import ussd_session
 from ussd.tasks import report_session
-from uuid import uuid4
-from celery.exceptions import MaxRetriesExceededError
+from ussd.tests import UssdTestCase, TestCase
 
 
 @override_settings(
@@ -97,7 +99,7 @@ class TestingUssdReportSession(UssdTestCase.BaseUssdTestCase, TestCase):
                             "session_key": "reported",
                             "validate_response": [
                                 {"expression":
-                                    "{{reported.status_code}} == 200"}
+                                     "{{reported.status_code}} == 200"}
                             ],
                             "retry_mechanism": {
                                 "max_retries": 3
@@ -177,9 +179,9 @@ class TestingUssdReportSession(UssdTestCase.BaseUssdTestCase, TestCase):
                     "max_retries": 3
                 },
                 "validate_response": [
-                                {"expression":
-                                    "{{reported.status_code}} == 200"}
-                            ],
+                    {"expression":
+                         "{{reported.status_code}} == 200"}
+                ],
                 "request_conf": {
                     "url": "localhost:8006/api",
                     "method": "post",
@@ -229,9 +231,9 @@ class TestingUssdReportSession(UssdTestCase.BaseUssdTestCase, TestCase):
                     "max_retries": 3
                 },
                 "validate_response": [
-                                {"expression":
-                                    "{{reported.status_code}} == 200"}
-                            ],
+                    {"expression":
+                         "{{reported.status_code}} == 200"}
+                ],
                 "request_conf": {
                     "url": "localhost:8006/api",
                     "method": "post",
@@ -279,7 +281,7 @@ class TestingUssdReportSession(UssdTestCase.BaseUssdTestCase, TestCase):
 
         self.assertEqual(
             "Test getting variable from os environmen. variable_test",
-            ussd_client.send('') # dial in
+            ussd_client.send('')  # dial in
         )
 
     @mock.patch("ussd.core.requests.request")
@@ -294,9 +296,6 @@ class TestingUssdReportSession(UssdTestCase.BaseUssdTestCase, TestCase):
         ussd_client = self.get_ussd_client()
         ussd_client.send('mwas')
 
-
     def testing_invalid_customer_journey(self):
         # this is tested in the initial screen
         pass
-
-

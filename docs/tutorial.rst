@@ -2,41 +2,39 @@
 Creating ussd screens
 =====================
 
-This document is a whirlwind tour of how to create ussd screen.
+This document is a whirlwind tour of how to create ussd screens.
 
-Strong feature of ussd airflow is to create ussd screen via yaml and not code.
-This make it easier to give the product owners to design ussd without
-knowing how to code
+The strongest feature of ussd airflow is being able to create ussd screen via yaml files and not code.
+This enables users with mininal coding knowledge to be able to design ussd screens.
 
-In ussd airflow customer journey is created via yaml.
-Each section in a yaml defines a ussd screen.
-There different types of ussd and each type has its own rule on how
-to write ussd application
+In ussd airflow, customer journey are created via yaml files, with each section defining a USSD screen.
+There are different types of screens, each type having its own rules on how to use it in a USSD application.
 
-Common rule in creating any kind of screen
-**Each screen has field called "type"** apart from initial_screen
+Common rules in creating any kind of screen
 
-The following are types of ussd and the rules to write them.
+**Each screen has a field called "type"** apart from initial_screen
 
-1. Initial screen (type -> initial_screen)
+The following are types of screens and the rules related to them.
+
+1. Initial Screen (type -> initial_screen)
 ------------------------------------------
 
 .. automodule:: ussd.screens.initial_screen
     :members: InitialScreen
 
-2. Input screen (type -> input_screen)
+2. Input Screen (type -> input_screen)
 --------------------------------------
 
 .. automodule:: ussd.screens.input_screen
    :members: InputScreen
 
-3. Menu screen (type -> menu_screen)
+3. Menu Screen (type -> menu_screen)
 ------------------------------------
 
 .. autoclass:: ussd.screens.menu_screen.MenuScreen
 
 
-4. Quit screen (type -> quit_screen)
+4. Quit Screen (type -> quit_screen)
 ------------------------------------
 
 .. autoclass:: ussd.screens.quit_screen.QuitScreen
@@ -68,8 +66,7 @@ The following are types of ussd and the rules to write them.
 .. autoclass:: ussd.screens.function_screen.FunctionScreen
 
 
-***Once you have created your ussd screens run the following code to validate
-them:***
+***Once you have created your USSD screens run the following code to validate the customer journey***
 
    .. code-block:: text
 

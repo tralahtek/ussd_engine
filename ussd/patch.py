@@ -13,7 +13,7 @@ if sys.argv[1] == "test":
     def custom_setup_database(*args, **kwargs):
         # we create dynamod db then call the normal setup database
         management.call_command('delete_dynamodb_table')
-        management.call_command('create_dynamo_table', table=settings.DYNAMODB_TABLE)
+        management.call_command('create_dynamo_table', table_name=settings.DYNAMODB_TABLE)
         parallel = args[0].parallel
         if parallel > 1:
             for index in range(args[0].parallel):

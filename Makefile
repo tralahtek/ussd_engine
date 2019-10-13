@@ -1,3 +1,4 @@
+
 test:
 	@docker-compose run --service-port app python manage.py test
 
@@ -10,3 +11,6 @@ compile_documentation:
 
 create_dynamodb_table:
 	docker-compose run ansible ./create_dynamodb.sh
+
+deploy:
+	docker-compose run --no-deps -e VERSION=$(version) -e PYPI_PASSWORD=$(PYPI_PASSWORD) -e PYPI_USER=$(PYPI_USER)  app ./publish.sh

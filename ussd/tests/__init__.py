@@ -49,6 +49,9 @@ class UssdTestCase(object):
 
                 self.assertEqual(is_valid, expected_validation, error_message)
 
+                for key, value in expected_errors.items():
+                    self.assertDictEqual(error_message[key], value, key)
+
                 self.assertDictEqual(error_message,
                                      expected_errors)
 
@@ -57,10 +60,14 @@ class UssdTestCase(object):
 
         def testing_invalid_customer_journey(self):
 
-            self._test_ussd_validation(self.invalid_yml, False,
+            try:
+                self._test_ussd_validation(self.invalid_yml, False,
                                        getattr(self,
                                                "validation_error_message",
                                                {}))
+            except Exception as e:
+                if hasattr(self, "expected_error") and not isinstance(e, self.__getattribute__("expected_error")):
+                    raise e
 
         def test_rendering_graph_js(self):
             if os.path.exists(self.graph_file):

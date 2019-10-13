@@ -41,40 +41,46 @@ def get_text(text):
     return text['en']
 
 
-def extract_file(filename):
-    with open(filename, 'r') as f:
-        return yaml.load(f, Loader=YamlIncludesLoader)
+def extract_file(file_name, parent_file_path):
+    # first try the raw path
+
+    if os.path.isfile(file_name):
+        file_path = file_name
+    else:
+        file_path = os.path.abspath(
+            os.path.join(
+                os.path.dirname(parent_file_path),
+                file_name
+            )
+        )
+        if not os.path.isfile(file_path):
+            raise FileNotFoundError(file_name)
+
+    with open(file_path, 'r') as f:
+        return yaml.load(f)
 
 
-class YamlIncludesLoader(Loader):
-    """
-    YAML Loader with `!include` constructor
-    """
+def include(loader, node):
+    if isinstance(node, yaml.ScalarNode):
+        return extract_file(loader.construct_scalar(node), node.start_mark.name)
 
-    def __init__(self, stream):
-        super(YamlIncludesLoader, self).__init__(stream)
-        YamlIncludesLoader.add_constructor('!include', YamlIncludesLoader.include)
+    elif isinstance(node, yaml.SequenceNode):
+        data = {}
+        for filename in loader.construct_sequence(node):
+            file_path = Template(filename).render(os.environ)
+            data.update(extract_file(os.path.abspath(file_path)))
 
-    def include(self, node):
-        if isinstance(node, yaml.ScalarNode):
-            return extract_file(self.construct_scalar(node))
+        return data
 
-        elif isinstance(node, yaml.SequenceNode):
-            data = {}
-            for filename in self.construct_sequence(node):
-                file_path = Template(filename).render(os.environ)
-                data.update(extract_file(os.path.abspath(file_path)))
+    else:
+        raise ConstructorError("Error:: unrecognised node type in !include statement")
 
-            return data
-
-        else:
-            raise ConstructorError("Error:: unrecognised node type in !include statement")
 
 
 class YamlToGo:
     def __init__(self, file):
         with open(file, 'r') as f:
-            data = yaml.load(f, Loader=YamlIncludesLoader)
+            data = yaml.load(f)
 
         included_files = data.get('includes')
         if included_files:

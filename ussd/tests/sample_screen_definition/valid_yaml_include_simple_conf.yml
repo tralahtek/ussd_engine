@@ -1,5 +1,5 @@
+!extends:./valid_yaml_include_simple_screen_one.yml
+
 initial_screen:
   type: initial_screen
   next_screen: screen_one
-
-includes: !include valid_yaml_include_screen_one.yaml

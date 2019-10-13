@@ -99,8 +99,7 @@ class NextUssdScreenSerializer(serializers.Serializer):
         except ValidationError as err:
             if isinstance(data.get('next_screen'), str):
                 if err.detail.get('next_screen'):
-                    # import ipdb; ipdb.set_trace()
-                    err.detail['next_screen'] = str(err.detail['next_screen'][0]['next_screen'][0])
+                    err.detail['next_screen'] = err.detail['next_screen'][0]['next_screen']
             raise err
 
 

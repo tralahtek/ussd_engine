@@ -32,6 +32,7 @@ from ussd.tasks import report_session
 from ussd.utilities import YamlToGo
 from .graph import Graph, Link, Vertex, convert_graph_to_mermaid_text
 from .screens.serializers import UssdBaseSerializer
+from configure import Configuration
 
 _registered_ussd_handlers = {}
 _registered_filters = {}
@@ -100,7 +101,11 @@ def generate_session_id():
 def load_yaml(file_path, namespace):
     file_path = Template(file_path).render(os.environ)
 
-    yaml_dict = YamlToGo(os.path.abspath(file_path)).yaml
+    yaml_dict = Configuration.from_file(
+            os.path.abspath(file_path),
+            multi_constructors={'!include': utilities.include},
+            configure=False
+        )
 
     staticconf.DictConfiguration(
         yaml_dict,

@@ -7,7 +7,7 @@ from django.test import override_settings
 
 from ussd.core import ussd_session
 from ussd.tasks import report_session
-from ussd.tests import UssdTestCase, TestCase
+from ussd.tests import UssdTestCase
 
 
 @override_settings(
@@ -15,7 +15,7 @@ from ussd.tests import UssdTestCase, TestCase
     CELERY_ALWAYS_EAGER=True,
     BROKER_BACKEND='memory'
 )
-class TestingUssdReportSession(UssdTestCase.BaseUssdTestCase, TestCase):
+class TestingUssdReportSession(UssdTestCase.BaseUssdTestCase):
     customer_journey_to_use = 'sample_report_session.yml'
 
     def setUp(self):

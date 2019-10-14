@@ -13,4 +13,4 @@ create_dynamodb_table:
 	docker-compose run ansible ./create_dynamodb.sh
 
 deploy:
-	docker-compose run --no-deps -e VERSION=$(version) -e PYPI_PASSWORD=$(PYPI_PASSWORD) -e PYPI_USER=$(PYPI_USER)  app ./publish.sh
+	docker run -e VERSION=$(version) -e PYPI_PASSWORD=$(PYPI_PASSWORD) -e PYPI_USER=$(PYPI_USER) -v '$(PWD):/usr/src/app' mwaaas/dev_tool_pypi:latest ussd/__init__.py

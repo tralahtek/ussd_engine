@@ -4,8 +4,8 @@ from copy import deepcopy
 from ussd.core import UssdView
 from ..DummyStore import DummyStore
 from ..DynamoDb import DynamoDb
-from django.core import management
 from django.conf import settings
+from ..YamlJourneyStore import YamlJourneyStore
 
 
 class TestDriverStore:
@@ -177,3 +177,10 @@ class TestDynamodb(TestDriverStore.BaseDriverStoreTestCase):
     @staticmethod
     def setup_driver() -> DynamoDb:
         return DynamoDb(settings.DYNAMODB_TABLE, "http://dynamodb:8000")
+
+
+class TestYamlJourneyStore(TestDriverStore.BaseDriverStoreTestCase):
+
+    @staticmethod
+    def setup_driver() -> YamlJourneyStore:
+        return YamlJourneyStore()

@@ -44,6 +44,25 @@ def include(loader, node):
         raise ConstructorError("Error:: unrecognised node type in !include statement")
 
 
+def load_dict_from_yaml(file_path) -> dict:
+    file_path = Template(file_path).render(os.environ)
+    return Configuration.from_file(
+        os.path.abspath(file_path),
+        multi_constructors={'!include': include},
+        configure=False
+    )
+
+
+def load_yaml(file_path) -> dict:
+    if file_path not in staticconf.config.configuration_namespaces:
+        yaml_dict = load_dict_from_yaml(file_path)
+        staticconf.DictConfiguration(
+            yaml_dict,
+            namespace=file_path,
+            flatten=False)
+    return staticconf.config.configuration_namespaces[file_path].configuration_values
+
+
 class YamlJourneyStore(JourneyStore):
     """
     Loader used for loading and using journeys in a yaml file
@@ -54,23 +73,6 @@ class YamlJourneyStore(JourneyStore):
 
         if not os.path.isdir(self.journey_directory):
             os.makedirs(self.journey_directory)
-
-    @staticmethod
-    def load_yaml(file_path) -> dict:
-
-        if file_path not in staticconf.config.configuration_namespaces:
-            file_path = Template(file_path).render(os.environ)
-            yaml_dict = Configuration.from_file(
-                os.path.abspath(file_path),
-                multi_constructors={'!include': include},
-                configure=False
-            )
-
-            staticconf.DictConfiguration(
-                yaml_dict,
-                namespace=file_path,
-                flatten=False)
-        return staticconf.config.configuration_namespaces[file_path].configuration_values
 
     def _get_or_create_directory(self, name):
         directory = self._get_directory(name)
@@ -98,7 +100,7 @@ class YamlJourneyStore(JourneyStore):
         if not os.path.isfile(file_path):
             return None
 
-        journey = self.load_yaml(file_path)
+        journey = load_yaml(file_path)
         if screen_name:
             return journey[screen_name]
         return journey

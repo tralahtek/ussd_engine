@@ -1,14 +1,13 @@
-from django.shortcuts import render
-
-# Create your views here.
+import os
 from ussd.core import UssdView, UssdRequest
 from django.http import HttpResponse
-from {{ app_name }} import path
+from ussd.store.journey_store.YamlJourneyStore import YamlJourneyStore
+
+path = os.path.dirname(os.path.abspath(__file__))
+journey_dir = os.path.join(path, "journeys")
 
 
 class {{ camel_case_app_name }}UssdGateWay(UssdView):
-    customer_journey_namespace = "{{ camel_case_app_name }}UssdGateWay"
-    customer_journey_conf = path + "/customer_journey.yml"
 
     @staticmethod
     def post(req):
@@ -20,13 +19,15 @@ class {{ camel_case_app_name }}UssdGateWay(UssdView):
             session_id=req.data['sessionId'],
             ussd_input=text,
             service_code=req.data['serviceCode'],
-            language=req.data.get('language', 'en')
+            language=req.data.get('language', 'en'),
+            journey_name="journey_a",
+            journey_version="0.0.0",
+            journey_store=YamlJourneyStore(journey_dir)
         )
 
         return ussd_request
 
-    @staticmethod
-    def ussd_response_handler(ussd_response):
+    def ussd_response_handler(self, ussd_response):
         if ussd_response.status:
             res = 'CON' + ' ' + str(ussd_response)
             response = HttpResponse(res)

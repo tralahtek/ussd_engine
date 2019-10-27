@@ -178,3 +178,9 @@ class TestDynamodb(TestDriverStore.BaseDriverStoreTestCase):
     def setup_driver() -> DynamoDb:
         return DynamoDb(settings.DYNAMODB_TABLE, "http://dynamodb:8000")
 
+
+class TestYamlJourneyStore(TestDriverStore.BaseDriverStoreTestCase):
+
+    @staticmethod
+    def setup_driver() -> YamlJourneyStore:
+        return YamlJourneyStore()

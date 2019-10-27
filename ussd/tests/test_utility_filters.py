@@ -8,7 +8,8 @@ class TestScreensUsingFilters(UssdTestCase.BaseUssdTestCase):
         return self.ussd_client(
             generate_customer_journey=False,
             extra_payload={
-                "customer_journey_conf": "sample_journey/sample_using_utility_filters.yml"
+                "journey_name": "sample_journey",
+                "journey_version": "sample_using_utility_filters"
             }
         )
 

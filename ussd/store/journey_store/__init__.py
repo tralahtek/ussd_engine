@@ -2,7 +2,6 @@
 Customer journey are stored in a document store.
 Any engine that implements this interface can be integrated with journey store.
 """
-from ussd.core import UssdView
 from django.core.exceptions import ValidationError
 import abc
 
@@ -55,6 +54,7 @@ class JourneyStore(object, metaclass=abc.ABCMeta):
 
         # validate if its not in editing mode.
         if not edit_mode:
+            from ussd.core import UssdView
             is_valid, errors = UssdView.validate_ussd_journey(journey)
             if not is_valid:
                 raise ValidationError("invalid journey")

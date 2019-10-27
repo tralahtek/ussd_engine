@@ -9,7 +9,8 @@ class TestMultiLanguage(UssdTestCase.BaseUssdTestCase):
             language='sw',
             generate_customer_journey=False,
             extra_payload={
-                "customer_journey_conf": "sample_journey/valid_multi_language_support_from_session_data_conf.yml"
+                "journey_name": "sample_journey",
+                "journey_version": "valid_multi_language_support_from_session_data_conf"
             }
         )
 

@@ -1,7 +1,6 @@
-from ussd.core import UssdHandlerAbstract, load_yaml
+from ussd.core import UssdHandlerAbstract
 from rest_framework import serializers
 from ussd.screens.serializers import NextUssdScreenSerializer
-import staticconf
 from ussd.graph import Vertex, Link
 import typing
 
@@ -133,8 +132,6 @@ class InitialScreen(UssdHandlerAbstract):
     def handle(self):
 
         if isinstance(self.screen_content, dict):
-            if self.screen_content.get('variables'):
-                self.load_variable_files()
 
             # create ussd variables defined int the yaml
             self.create_variables()
@@ -163,20 +160,6 @@ class InitialScreen(UssdHandlerAbstract):
                                               session=self.ussd_request.session
                                               )
 
-    def load_variable_files(self):
-        variable_conf = self.screen_content['variables']
-        file_path = variable_conf['file']
-        namespace = variable_conf['namespace']
-
-        # check if it has been loaded
-        if not namespace in \
-                staticconf.config.configuration_namespaces:
-            load_yaml(file_path, namespace)
-
-        self.ussd_request.session.update(
-            staticconf.config.configuration_namespaces[namespace].
-            configuration_values
-        )
 
     def set_language(self):
         self.ussd_request.session['default_language'] = \

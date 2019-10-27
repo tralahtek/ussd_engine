@@ -23,6 +23,10 @@ class TestUssdAppCreation(LiveServerTestCase):
     def setUp(self):
         self.client = APIClient()
 
+    def tearDown(self) -> None:
+        # Remove created app. Clean up
+        os.system('rm -rf TestUssdApp')
+
     def test_app_creation(self):
         app_name = 'TestUssdApp'
         call_command('create_ussd_app', app_name)
@@ -44,4 +48,4 @@ class TestUssdAppCreation(LiveServerTestCase):
                          b'END Example Quit Screen. Delete this and define your own customer journey screens.')
         self.assertEqual(response.status_code, 200)
         print(response.status_code)
-        os.system('rm -r TestUssdApp')  # Remove created app. Clean up
+

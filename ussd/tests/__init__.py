@@ -3,12 +3,12 @@ import os
 import uuid
 
 import requests
-import staticconf
 from django.test import LiveServerTestCase
 from django.urls import reverse
 
-from ussd.core import UssdView, load_yaml, render_journey_as_graph, render_journey_as_mermaid_text
+from ussd.core import UssdView, render_journey_as_graph, render_journey_as_mermaid_text, UssdRequest
 from ussd.tests.sample_screen_definition import path
+from ussd.store.journey_store.YamlJourneyStore import YamlJourneyStore
 
 
 class UssdTestCase(object):
@@ -20,10 +20,15 @@ class UssdTestCase(object):
         validate_ussd = True
 
         def setUp(self):
+            self.journey_store = YamlJourneyStore("./ussd/tests/sample_screen_definition")
+
             file_prefix = self.__module__.split('.')[-1].replace('test_', '')
-            file_yml = file_prefix + '_conf.yml'
-            self.valid_yml = file_prefix + '/' + 'valid_' + file_yml
-            self.invalid_yml = file_prefix + '/' + 'invalid_' + file_yml
+            self.journey_name = file_prefix
+            journey_version_suffix = file_prefix + "_conf"
+
+            self.valid_version = 'valid_' + journey_version_suffix
+            self.invalid_version = 'invalid_' + journey_version_suffix
+
             self.mermaid_file = path + file_prefix + '/' + '/' + 'valid_' + file_prefix + '_mermaid.txt'
             self.graph_file = path + '/' + file_prefix + '/' + 'valid_' + file_prefix + '_graph.json'
             self.namespace = self.__module__.split('.')[-1]
@@ -33,16 +38,11 @@ class UssdTestCase(object):
 
             #
 
-        def _test_ussd_validation(self, yaml_to_validate, expected_validation,
+        def _test_ussd_validation(self, version_to_validate, expected_validation,
                                   expected_errors):
 
             if self.validate_ussd:
-                namespace = self.namespace + str(expected_validation)
-                file_path = path + '/' + yaml_to_validate
-                load_yaml(file_path, namespace)
-                ussd_screens = staticconf.config. \
-                    get_namespace(namespace). \
-                    get_config_values()
+                ussd_screens = self.journey_store.get(self.journey_name, version_to_validate)
 
                 is_valid, error_message = UssdView.validate_ussd_journey(
                     ussd_screens)
@@ -56,12 +56,12 @@ class UssdTestCase(object):
                                      expected_errors)
 
         def testing_valid_customer_journey(self):
-            self._test_ussd_validation(self.valid_yml, True, {})
+            self._test_ussd_validation(self.valid_version, True, {})
 
         def testing_invalid_customer_journey(self):
 
             try:
-                self._test_ussd_validation(self.invalid_yml, False,
+                self._test_ussd_validation(self.invalid_version, False,
                                        getattr(self,
                                                "validation_error_message",
                                                {}))
@@ -71,11 +71,7 @@ class UssdTestCase(object):
 
         def test_rendering_graph_js(self):
             if os.path.exists(self.graph_file):
-                namespace = self.namespace + 'mermaid_js'
-                file_path = path + '/' + self.valid_yml
-                load_yaml(file_path, namespace)
-                ussd_screens = staticconf.config.get_namespace(namespace). \
-                    get_config_values()
+                ussd_screens = self.journey_store.get(self.journey_name, self.valid_version)
 
                 actual_graph_js = render_journey_as_graph(ussd_screens)
 
@@ -99,11 +95,7 @@ class UssdTestCase(object):
 
         def test_rendering_mermaid_js(self):
             if os.path.exists(self.mermaid_file):
-                namespace = self.namespace + 'mermaid_js'
-                file_path = path + '/' + self.valid_yml
-                load_yaml(file_path, namespace)
-                ussd_screens = staticconf.config.get_namespace(namespace). \
-                    get_config_values()
+                ussd_screens = self.journey_store.get(self.journey_name, self.valid_version)
 
                 mermaid_text_format = render_journey_as_mermaid_text(ussd_screens)
 
@@ -156,7 +148,8 @@ class UssdTestCase(object):
 
             if generate_customer_journey:
                 customer_journey_conf = {
-                    'customer_journey_conf': self.valid_yml
+                    'journey_name': self.journey_name,
+                    'journey_version': self.valid_version
                 }
                 kwargs['extra_payload'] = customer_journey_conf
 

@@ -83,7 +83,10 @@ class TestUssdRequestCreation(TestCase):
 
     def test(self):
         session_id = '1234'
-        ussd_request = UssdRequest('1234', '200', '', 'en')
+        ussd_request = UssdRequest('1234', '200', '', 'en',
+                                   journey_name="sample_journey",
+                                   journey_version="sample_customer_journey.yml"
+                                   )
 
         self.assertTrue(len(session_id) < 8)
 
@@ -95,7 +98,10 @@ class TestUssdRequestCreation(TestCase):
                           None,
                           '200',
                           '',
-                          'en')
+                          'en',
+                          journey_name="sample_journey",
+                          journey_version="sample_customer_journey.yml"
+                          )
 
         # session_id and using custom session_id can't been defined
         self.assertRaises(
@@ -105,7 +111,9 @@ class TestUssdRequestCreation(TestCase):
             "200",
             "",
             "en",
-            use_built_in_session_management=True
+            use_built_in_session_management=True,
+            journey_name = "sample_journey",
+            journey_version = "sample_customer_journey.yml"
         )
 
 
@@ -130,7 +138,9 @@ class TestInheritance(UssdTestCase.BaseUssdTestCase):
         return self.ussd_client(
             generate_customer_journey=False,
             extra_payload={
-                "customer_journey_conf": "sample_journey/sample_using_inheritance.yml"
+                'journey_name': "sample_journey",
+                'journey_version': "sample_using_inheritance"
+
             }
         )
 
@@ -259,8 +269,9 @@ class TestInheritance(UssdTestCase.BaseUssdTestCase):
         )
 
     def testing_valid_customer_journey(self):
+        self.journey_name = "sample_journey"
         self._test_ussd_validation(
-            'sample_journey/sample_using_inheritance.yml',
+            'sample_using_inheritance',
             True,
             {}
         )
@@ -276,9 +287,9 @@ class TestSessionManagement(UssdTestCase.BaseUssdTestCase):
         return self.ussd_client(
             generate_customer_journey=False,
             extra_payload={
-                "customer_journey_conf":
-                    "sample_journey/sample_used_for_testing_session_management.yml",
-                "use_built_in_session_management": True
+                "use_built_in_session_management": True,
+                'journey_name': "sample_journey",
+                'journey_version': "sample_used_for_testing_session_management"
             }
         )
 
@@ -286,7 +297,8 @@ class TestSessionManagement(UssdTestCase.BaseUssdTestCase):
     def _create_ussd_request(phone_number):
         return UssdRequest(None, phone_number, '', 'en',
                            use_built_in_session_management=True,
-                           expiry=1)
+                           expiry=1, journey_name='sample_journey',
+                           journey_version='sample_customer_journey.yml')
 
     def test_session_expiry(self):
         phone_number = 200

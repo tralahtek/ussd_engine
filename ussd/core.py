@@ -13,14 +13,13 @@ from importlib import import_module
 from urllib.parse import unquote
 
 import requests
-import staticconf
 from annoying.functions import get_object_or_None
 from django.conf import settings
 from django.contrib.sessions.backends import signed_cookies
 from django.contrib.sessions.backends.base import CreateError
 from django.http import HttpResponse
 from django.utils import timezone
-from jinja2 import Template, Environment
+from jinja2 import Environment
 from rest_framework.serializers import SerializerMetaclass
 from rest_framework.views import APIView
 from structlog import get_logger
@@ -29,10 +28,10 @@ from ussd import defaults as ussd_airflow_variables
 from ussd import utilities
 from ussd.models import SessionLookup
 from ussd.tasks import report_session
-from ussd.utilities import YamlToGo
 from .graph import Graph, Link, Vertex, convert_graph_to_mermaid_text
 from .screens.serializers import UssdBaseSerializer
-from configure import Configuration
+from ussd.store.journey_store import JourneyStore
+from ussd.store.journey_store.YamlJourneyStore import YamlJourneyStore
 
 _registered_ussd_handlers = {}
 _registered_filters = {}
@@ -98,21 +97,6 @@ def generate_session_id():
     return session_store.session_key
 
 
-def load_yaml(file_path, namespace):
-    file_path = Template(file_path).render(os.environ)
-
-    yaml_dict = Configuration.from_file(
-            os.path.abspath(file_path),
-            multi_constructors={'!include': utilities.include},
-            configure=False
-        )
-
-    staticconf.DictConfiguration(
-        yaml_dict,
-        namespace=namespace,
-        flatten=False)
-
-
 class UssdRequest(object):
     """
     :param session_id:
@@ -151,7 +135,11 @@ class UssdRequest(object):
     """
 
     def __init__(self, session_id, phone_number,
-                 ussd_input, language, default_language=None,
+                 ussd_input, language,
+                 journey_name,
+                 journey_store: JourneyStore = None,
+                 journey_version=None,
+                 default_language=None,
                  use_built_in_session_management=False,
                  expiry=180,
                  **kwargs):
@@ -202,6 +190,14 @@ class UssdRequest(object):
         self.default_language = default_language or 'en'
         self.session_id = session_id
         self.session = ussd_session(self.session_id)
+
+        # journey config
+        if journey_store is None:
+            self.journey_store = YamlJourneyStore("./ussd/tests/sample_screen_definition")
+        else:
+            self.journey_store = journey_store
+        self.journey_name = journey_name
+        self.journey_version = journey_version
 
         for key, value in kwargs.items():
             setattr(self, key, value)
@@ -254,6 +250,13 @@ class UssdRequest(object):
 
         return session_mapping.session_id
 
+    def get_screens(self, screen_name=None):
+        return self.journey_store.get(
+            self.journey_name,
+            self.journey_version,
+            screen_name
+        )
+
 
 class UssdResponse(object):
     """
@@ -279,15 +282,6 @@ class UssdResponse(object):
 
     def __str__(self):
         return self.dumps()
-
-
-class UssdViewMetaClass(type):
-    def __init__(cls, name, bases, attr, **kwargs):
-        super(UssdViewMetaClass, cls).__init__(
-            name, bases, attr)
-        path = getattr(cls, 'customer_journey_conf')
-        if path is not None:
-            _customer_journey_files.append(getattr(cls, 'customer_journey_conf'))
 
 
 class UssdHandlerMetaClass(type):
@@ -661,7 +655,7 @@ class UssdHandlerAbstract(object, metaclass=UssdHandlerMetaClass):
 NextScreens = namedtuple("NextScreens", "next_screens links")
 
 
-class UssdView(APIView, metaclass=UssdViewMetaClass):
+class UssdView(APIView):
     """
     To create Ussd View requires the following things:
         - Inherit from **UssdView** (Mandatory)
@@ -744,56 +738,6 @@ class UssdView(APIView, metaclass=UssdViewMetaClass):
                         response = HttpResponse(res)
                     return response
     """
-    customer_journey_conf = None
-    customer_journey_namespace = None
-
-    def initial(self, request, *args, **kwargs):
-        # initialize restframework
-        super(UssdView, self).initial(request, args, kwargs)
-
-        # initialize ussd
-        self.ussd_initial(request)
-
-    def ussd_initial(self, request, *args, **kwargs):
-        if hasattr(self, 'get_customer_journey_conf'):
-            self.customer_journey_conf = self.get_customer_journey_conf(
-                request
-            )
-        if hasattr(self, 'get_customer_journey_namespace'):
-            self.customer_journey_namespace = \
-                self.get_customer_journey_namespace(request)
-
-        if self.customer_journey_conf is None \
-                or self.customer_journey_namespace is None:
-            raise MissingAttribute("attribute customer_journey_conf and "
-                                   "customer_journey_namespace are required")
-
-        if not self.customer_journey_namespace in \
-               staticconf.config.configuration_namespaces:
-            load_yaml(
-                self.customer_journey_conf,
-                self.customer_journey_namespace
-            )
-
-        # confirm variable template has been loaded
-        # get initial screen
-
-        initial_screen = staticconf.read(
-            "initial_screen",
-            namespace=self.customer_journey_namespace)
-
-        if isinstance(initial_screen, dict) and \
-                initial_screen.get('variables'):
-            variable_conf = initial_screen['variables']
-            file_path = variable_conf['file']
-            namespace = variable_conf['namespace']
-            if not namespace in \
-                   staticconf.config.configuration_namespaces:
-                load_yaml(file_path, namespace)
-
-        self.initial_screen = initial_screen \
-            if isinstance(initial_screen, dict) \
-            else {"initial_screen": initial_screen}
 
     def finalize_response(self, request, response, *args, **kwargs):
 
@@ -802,8 +746,8 @@ class UssdView(APIView, metaclass=UssdViewMetaClass):
             try:
                 ussd_response = self.ussd_dispatcher(response)
             except Exception as e:
-                if settings.DEBUG:
-                    ussd_response = UssdResponse(str(e))
+                # if settings.DEBUG:
+                ussd_response = UssdResponse(str(e))
             return self.ussd_response_handler(ussd_response)
         return super(UssdView, self).finalize_response(
             request, response, args, kwargs)
@@ -812,6 +756,11 @@ class UssdView(APIView, metaclass=UssdViewMetaClass):
         return HttpResponse(str(ussd_response))
 
     def ussd_dispatcher(self, ussd_request):
+
+        initial_screen = ussd_request.get_screens('initial_screen')
+        self.initial_screen = initial_screen \
+            if isinstance(initial_screen, dict) \
+            else {"initial_screen": initial_screen}
 
         # Clear input and initialize session if we are starting up
         if '_ussd_state' not in ussd_request.session:
@@ -875,9 +824,7 @@ class UssdView(APIView, metaclass=UssdViewMetaClass):
         while not isinstance(ussd_response, UssdResponse):
             ussd_request, handler = ussd_response
 
-            screen_content = staticconf.read(
-                handler,
-                namespace=self.customer_journey_namespace)
+            screen_content = ussd_request.get_screens(handler)
 
             screen_type = 'initial_screen' \
                 if handler == "initial_screen" and \
@@ -1011,7 +958,8 @@ def render_journey_as_graph(ussd_screen: dict) -> Graph:
 
     initial_screen = ussd_screen['initial_screen']
     _registered_ussd_handlers['initial_screen'](
-        UssdRequest("dummy", "dummy", "", "en"),
+        UssdRequest("dummy", "dummy", "", "en",
+                    journey_name="", journey_version=""),
         "initial_screen",
         initial_screen,
         initial_screen,

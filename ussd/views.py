@@ -20,6 +20,12 @@ class AfricasTalkingUssdGateway(UssdView):
         session_id = req.data['sessionId']
         if req.data.get('use_built_in_session_management', False):
             session_id = None
+
+        journey_name = req.data.get('journey_name', 'sample_journey')
+
+        journey_version = req.data.get(
+            'journey_version', 'sample_customer_journey'
+        )
         ussd_request = UssdRequest(
             phone_number=req.data['phoneNumber'].strip('+'),
             session_id=session_id,
@@ -27,7 +33,9 @@ class AfricasTalkingUssdGateway(UssdView):
             service_code=req.data['serviceCode'],
             language=req.data.get('language', 'en'),
             use_built_in_session_management=req.data.get(
-                'use_built_in_session_management', False)
+                'use_built_in_session_management', False),
+            journey_name=journey_name,
+            journey_version=journey_version
         )
 
         return ussd_request

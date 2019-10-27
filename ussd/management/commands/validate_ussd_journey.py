@@ -4,7 +4,8 @@ import json
 
 from django.core.management.base import BaseCommand, CommandError
 
-from ussd.core import UssdView, load_yaml
+from ussd.core import UssdView
+from ussd.store.journey_store.YamlJourneyStore import load_dict_from_yaml
 
 
 class Command(BaseCommand):
@@ -18,12 +19,8 @@ class Command(BaseCommand):
         for ussd_config in options["ussd_configs"]:
             if not os.path.isfile(ussd_config):
                 raise CommandError("The file path {} does not exist".format(ussd_config))
-            namespace = 'validation'
-            load_yaml(ussd_config, namespace)
 
-            ussd_screens = staticconf.config. \
-                get_namespace(namespace). \
-                get_config_values()
+            ussd_screens = load_dict_from_yaml(ussd_config)
 
             is_valid, error_ussd_config_message = UssdView.validate_ussd_journey(
                 ussd_screens)

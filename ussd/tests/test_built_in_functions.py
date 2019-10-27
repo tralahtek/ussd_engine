@@ -9,8 +9,8 @@ class TestScreenUsing(UssdTestCase.BaseUssdTestCase):
         return self.ussd_client(
             generate_customer_journey=False,
             extra_payload={
-                "customer_journey_conf":
-                    "sample_journey/testing_using_built_in_functions.yml"
+                'journey_name': "sample_journey",
+                'journey_version': "testing_using_built_in_functions"
             }
         )
 

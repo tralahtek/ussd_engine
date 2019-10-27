@@ -16,17 +16,20 @@ from ussd.tests import UssdTestCase
     BROKER_BACKEND='memory'
 )
 class TestingUssdReportSession(UssdTestCase.BaseUssdTestCase):
-    customer_journey_to_use = 'sample_journey/sample_report_session.yml'
 
     def setUp(self):
         super(TestingUssdReportSession, self).setUp()
-        self.valid_yml = self.customer_journey_to_use
+        self.journey_name = "sample_journey"
+        self.valid_version = "sample_report_session"
+        # self.valid_yml = self.customer_journey_to_use
 
-    def get_ussd_client(self, journey=customer_journey_to_use):
+    def get_ussd_client(self, journey_name="sample_journey",
+                        journey_version="sample_report_session"):
         return self.ussd_client(
             generate_customer_journey=False,
             extra_payload={
-                "customer_journey_conf": journey
+                "journey_name": journey_name,
+                "journey_version": journey_version
             }
         )
 
@@ -276,8 +279,7 @@ class TestingUssdReportSession(UssdTestCase.BaseUssdTestCase):
     def test_report_task_only_called_when_activated(self, mock_report_session):
         # using a journey that report_session has not been activated
         # and one that has quit screen
-        ussd_client = self.get_ussd_client(
-            journey='quit_screen/valid_quit_screen_conf.yml')
+        ussd_client = self.get_ussd_client(journey_name="quit_screen", journey_version="valid_quit_screen_conf")
 
         self.assertEqual(
             "Test getting variable from os environmen. variable_test",

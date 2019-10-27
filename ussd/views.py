@@ -36,7 +36,7 @@ class AfricasTalkingUssdGateway(UssdView):
         if request.data.get('customer_journey_conf'):
             return path + '/' + request.data.get('customer_journey_conf')
         return getattr(settings, 'DEFAULT_USSD_SCREEN_JOURNEY',
-                       path + "/sample_customer_journey.yml")
+                       path + "sample_journey/sample_customer_journey.yml")
 
     def get_customer_journey_namespace(self, request):
         if request.data.get('customer_journey_conf'):

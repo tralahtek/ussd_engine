@@ -10,7 +10,7 @@ class TestScreenUsing(UssdTestCase.BaseUssdTestCase):
             generate_customer_journey=False,
             extra_payload={
                 "customer_journey_conf":
-                    "teasting_using_built_in_functions.yml"
+                    "sample_journey/testing_using_built_in_functions.yml"
             }
         )
 

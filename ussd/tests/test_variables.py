@@ -9,7 +9,7 @@ class TestScreensUsingVariable(UssdTestCase.BaseUssdTestCase):
         return self.ussd_client(
             generate_customer_journey=False,
             extra_payload={
-                "customer_journey_conf": "sample_using_variables.yml"
+                "customer_journey_conf": "sample_journey/sample_using_variables.yml"
             }
         )
 

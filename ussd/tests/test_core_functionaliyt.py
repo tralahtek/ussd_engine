@@ -130,7 +130,7 @@ class TestInheritance(UssdTestCase.BaseUssdTestCase):
         return self.ussd_client(
             generate_customer_journey=False,
             extra_payload={
-                "customer_journey_conf": "sample_using_inheritance.yml"
+                "customer_journey_conf": "sample_journey/sample_using_inheritance.yml"
             }
         )
 
@@ -260,7 +260,7 @@ class TestInheritance(UssdTestCase.BaseUssdTestCase):
 
     def testing_valid_customer_journey(self):
         self._test_ussd_validation(
-            'sample_using_inheritance.yml',
+            'sample_journey/sample_using_inheritance.yml',
             True,
             {}
         )
@@ -277,7 +277,7 @@ class TestSessionManagement(UssdTestCase.BaseUssdTestCase):
             generate_customer_journey=False,
             extra_payload={
                 "customer_journey_conf":
-                    "sample_used_for_testing_session_management.yml",
+                    "sample_journey/sample_used_for_testing_session_management.yml",
                 "use_built_in_session_management": True
             }
         )

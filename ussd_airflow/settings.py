@@ -128,7 +128,7 @@ STATIC_ROOT = os.path.abspath(os.path.join(BASE_DIR, 'static'))
 # in session
 SESSION_SERIALIZER = 'django.contrib.sessions.serializers.PickleSerializer'
 
-DEFAULT_USSD_SCREEN_JOURNEY = "./ussd/tests/sample_screen_definition/sample_customer_journey.yml"
+DEFAULT_USSD_SCREEN_JOURNEY = "./ussd/tests/sample_screen_definition/sample_journey/sample_customer_journey.yml"
 
 CORS_ORIGIN_ALLOW_ALL = True
 

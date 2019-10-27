@@ -22,10 +22,10 @@ class UssdTestCase(object):
         def setUp(self):
             file_prefix = self.__module__.split('.')[-1].replace('test_', '')
             file_yml = file_prefix + '_conf.yml'
-            self.valid_yml = 'valid_' + file_yml
-            self.invalid_yml = 'invalid_' + file_yml
-            self.mermaid_file = path + '/' + 'valid_' + file_prefix + '_mermaid.txt'
-            self.graph_file = path + '/' + 'valid_' + file_prefix + '_graph.json'
+            self.valid_yml = file_prefix + '/' + 'valid_' + file_yml
+            self.invalid_yml = file_prefix + '/' + 'invalid_' + file_yml
+            self.mermaid_file = path + file_prefix + '/' + '/' + 'valid_' + file_prefix + '_mermaid.txt'
+            self.graph_file = path + '/' + file_prefix + '/' + 'valid_' + file_prefix + '_graph.json'
             self.namespace = self.__module__.split('.')[-1]
             self.maxDiff = None
 

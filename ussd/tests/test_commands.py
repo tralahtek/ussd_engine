@@ -13,7 +13,7 @@ class ValidateCustomerJourneyConfig(TestCase):
 
     def test_command_output(self):
         out = StringIO()
-        file_name = "{0}/valid_quit_screen_conf.yml".format(path)
+        file_name = "{0}/quit_screen/valid_quit_screen_conf.yml".format(path)
         call_command('validate_ussd_journey', file_name, stdout=out)
         expected_output = {
             file_name: dict(
@@ -25,16 +25,16 @@ class ValidateCustomerJourneyConfig(TestCase):
 
     def testing_invalid_ussd_journey(self):
         out = StringIO()
-        file_name = "{0}/invalid_quit_screen_conf.yml".format(path)
+        file_name = "{0}/quit_screen/invalid_quit_screen_conf.yml".format(path)
         self.assertRaises(CommandError, call_command, 'validate_ussd_journey',
                           file_name, stdout=out)
 
     def test_called_with_multiple_files(self):
         out = StringIO()
-        file_1 = "{0}/valid_quit_screen_conf.yml".format(path)
-        file_2 = "{0}/valid_http_screen_conf.yml".format(path)
-        file_3 = "{0}/valid_input_screen_conf.yml".format(path)
-        file_4 = "{0}/sample_using_inheritance.yml".format(path)
+        file_1 = "{0}/quit_screen/valid_quit_screen_conf.yml".format(path)
+        file_2 = "{0}/http_screen/valid_http_screen_conf.yml".format(path)
+        file_3 = "{0}/input_screen/valid_input_screen_conf.yml".format(path)
+        file_4 = "{0}/sample_journey/sample_using_inheritance.yml".format(path)
         call_command(
             "validate_ussd_journey",
             file_1,

@@ -32,6 +32,9 @@ from .graph import Graph, Link, Vertex, convert_graph_to_mermaid_text
 from .screens.serializers import UssdBaseSerializer
 from ussd.store.journey_store import JourneyStore
 from ussd.store.journey_store.YamlJourneyStore import YamlJourneyStore
+from simplekv import KeyValueStore
+from simplekv.fs import FilesystemStore
+from ussd.session_store import SessionStore
 
 _registered_ussd_handlers = {}
 _registered_filters = {}
@@ -72,23 +75,6 @@ def get_session_engine():
         raise ValueError("You cannot use channels session "
                          "functionality with signed cookie sessions!")
     return session_engine
-
-
-def ussd_session(session_id):
-    session = get_session_engine().SessionStore(session_key=session_id)
-    session._session.keys()
-    session._session_key = session_id
-
-    # If the session does not already exist, save to force our
-    # session key to be valid.
-    if not session.exists(session.session_key):
-        try:
-            session.save(must_create=True)
-        except CreateError:
-            # Session wasn't unique, so another consumer is doing the same thing
-            raise DuplicateSessionId("another sever is working"
-                                     "on this session id")
-    return session
 
 
 def generate_session_id():
@@ -139,6 +125,7 @@ class UssdRequest(object):
                  journey_name,
                  journey_store: JourneyStore = None,
                  journey_version=None,
+                 session_store_backend: KeyValueStore = FilesystemStore("./session_data"),
                  default_language=None,
                  use_built_in_session_management=False,
                  expiry=180,
@@ -175,6 +162,8 @@ class UssdRequest(object):
                 "has not been enabled"
             )
 
+        self.session_store_backend = session_store_backend
+
         if use_built_in_session_management:
             session_id = self.get_or_create_session_id(phone_number)
         else:
@@ -189,7 +178,9 @@ class UssdRequest(object):
         self.language = language
         self.default_language = default_language or 'en'
         self.session_id = session_id
-        self.session = ussd_session(self.session_id)
+
+        # session store config
+        self.session = self.get_session_from_store(self.session_id)
 
         # journey config
         if journey_store is None:
@@ -231,7 +222,7 @@ class UssdRequest(object):
                 session_id=generate_session_id()
             )
         else:
-            session = ussd_session(session_mapping.session_id)
+            session = self.get_session_from_store(session_mapping.session_id)
 
             # get last time session was updated
             if session.get(ussd_airflow_variables.last_update):
@@ -249,6 +240,10 @@ class UssdRequest(object):
                 session_mapping.save()
 
         return session_mapping.session_id
+
+    def get_session_from_store(self, session_id):
+        return SessionStore(session_key=session_id,
+                            kv_store=self.session_store_backend)
 
     def get_screens(self, screen_name=None):
         return self.journey_store.get(

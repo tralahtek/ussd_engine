@@ -1,4 +1,3 @@
-from ussd.core import ussd_session
 from ussd.tests import UssdTestCase
 from unittest import skip
 
@@ -21,7 +20,7 @@ class TestScreensUsingVariable(UssdTestCase.BaseUssdTestCase):
         # dial in
         ussd_client.send('')
 
-        session = ussd_session(ussd_client.session_id)
+        session = self.ussd_session(ussd_client.session_id)
 
         # check ussd variables were created
         expected_variables = {"name": "mwas", "hobbies": [],

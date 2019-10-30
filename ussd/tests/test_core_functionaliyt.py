@@ -9,7 +9,7 @@ from rest_framework import serializers
 from ussd import defaults as ussd_airflow_variables
 from ussd.core import _registered_ussd_handlers, \
     UssdHandlerAbstract, MissingAttribute, \
-    InvalidAttribute, UssdRequest, ussd_session, convert_error_response_to_mermaid_error
+    InvalidAttribute, UssdRequest, convert_error_response_to_mermaid_error
 from ussd.tests import UssdTestCase
 from ussd.utilities import datetime_to_string, string_to_datetime
 
@@ -261,7 +261,7 @@ class TestInheritance(UssdTestCase.BaseUssdTestCase):
 
         ]
 
-        session = ussd_session(ussd_client.session_id)
+        session = self.ussd_session(ussd_client.session_id)
 
         self.assertEqual(
             session['ussd_interaction'],

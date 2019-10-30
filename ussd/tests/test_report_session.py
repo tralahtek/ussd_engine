@@ -5,7 +5,6 @@ from celery.exceptions import MaxRetriesExceededError
 from django.http.response import JsonResponse
 from django.test import override_settings
 
-from ussd.core import ussd_session
 from ussd.tasks import report_session
 from ussd.tests import UssdTestCase
 
@@ -162,13 +161,12 @@ class TestingUssdReportSession(UssdTestCase.BaseUssdTestCase):
 
         mock_report_session.assert_has_calls(expected_calls)
 
-    @staticmethod
     @mock.patch('ussd.core.requests.request')
-    def test_http_call(mock_request):
+    def test_http_call(self, mock_request):
         mock_response = JsonResponse({"balance": 250})
         mock_request.return_value = mock_response
 
-        session = ussd_session(str(uuid4()))
+        session = self.ussd_session(str(uuid4()))
         session['session_id'] = session.session_key
         session['ussd_interaction'] = []
         session.save()
@@ -219,7 +217,7 @@ class TestingUssdReportSession(UssdTestCase.BaseUssdTestCase):
         mock_response = JsonResponse({"balance": 250})
         mock_request.return_value = mock_response
 
-        session = ussd_session(str(uuid4()))
+        session = self.ussd_session(str(uuid4()))
         session['session_id'] = session.session_key
         session['ussd_interaction'] = []
         session['posted'] = True
@@ -270,7 +268,7 @@ class TestingUssdReportSession(UssdTestCase.BaseUssdTestCase):
 
         # check posted flag has been set to false
         self.assertFalse(
-            ussd_session(ussd_client.session_id)['posted'],
+            self.ussd_session(ussd_client.session_id)['posted'],
         )
 
         self.assertTrue(mock_retry.called)

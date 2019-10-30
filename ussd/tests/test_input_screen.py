@@ -1,4 +1,3 @@
-from ussd.core import ussd_session
 from ussd.tests import UssdTestCase
 
 
@@ -41,7 +40,7 @@ class TestInputHandler(UssdTestCase.BaseUssdTestCase):
 
         # confirm height entered is 5 before going back
         self.assertEqual(
-            ussd_session(ussd_client.session_id)["height"],
+            self.ussd_session(ussd_client.session_id)["height"],
             '5'
         )
 

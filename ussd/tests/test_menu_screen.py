@@ -5,7 +5,6 @@ from collections import OrderedDict
 
 from django.test import override_settings
 
-from ussd.core import ussd_session
 from ussd.tests import UssdTestCase
 
 
@@ -92,9 +91,8 @@ class TestMenuHandler(UssdTestCase.BaseUssdTestCase):
         )
     )
 
-    @staticmethod
-    def add_vegetable_list_in_session(ussd_client):
-        session = ussd_session(ussd_client.session_id)
+    def add_vegetable_list_in_session(self, ussd_client):
+        session = self.ussd_session(ussd_client.session_id)
         session["vegetables_list"] = [
             "Sukuma",
             "Carrot",

@@ -1,4 +1,3 @@
-from ussd.core import ussd_session
 from ussd.tests import UssdTestCase
 
 
@@ -25,7 +24,7 @@ class TestUpdateSessionScreen(UssdTestCase.BaseUssdTestCase):
     def test(self):
         ussd_client = self.ussd_client()
         ussd_client.send('')
-        session = ussd_session(ussd_client.session_id)
+        session = self.ussd_session(ussd_client.session_id)
 
         self.assertEqual(
             session['customer_status'],
@@ -71,7 +70,7 @@ class TestUpdateSessionScreen(UssdTestCase.BaseUssdTestCase):
         # test for unregistered user
         ussd_client = self.ussd_client(phone_number=404)
         ussd_client.send('')
-        session = ussd_session(ussd_client.session_id)
+        session = self.ussd_session(ussd_client.session_id)
 
         self.assertEqual(
             session['customer_status'],

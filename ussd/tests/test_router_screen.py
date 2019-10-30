@@ -1,4 +1,3 @@
-from ussd.core import ussd_session
 from ussd.tests import UssdTestCase
 
 
@@ -14,9 +13,8 @@ class TestRouterHandler(UssdTestCase.BaseUssdTestCase):
         )
     )
 
-    @staticmethod
-    def add_phone_number_status_in_session(ussd_client):
-        session = ussd_session(ussd_client.session_id)
+    def add_phone_number_status_in_session(self, ussd_client):
+        session = self.ussd_session(ussd_client.session_id)
 
         session["phone_numbers"] = {
             "203": ["registered"],

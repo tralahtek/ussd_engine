@@ -9,6 +9,8 @@ from django.urls import reverse
 from ussd.core import UssdView, render_journey_as_graph, render_journey_as_mermaid_text, UssdRequest
 from ussd.tests.sample_screen_definition import path
 from ussd.store.journey_store.YamlJourneyStore import YamlJourneyStore
+from ussd.session_store import SessionStore
+from simplekv.fs import FilesystemStore
 
 
 class UssdTestCase(object):
@@ -18,6 +20,8 @@ class UssdTestCase(object):
 
     class BaseUssdTestCase(LiveServerTestCase):
         validate_ussd = True
+
+        session_store = FilesystemStore("./session_data")
 
         def setUp(self):
             self.journey_store = YamlJourneyStore("./ussd/tests/sample_screen_definition")
@@ -113,6 +117,9 @@ class UssdTestCase(object):
             with open(file_path) as f:
                 mermaid_text = f.read()
             return mermaid_text
+
+        def ussd_session(self, session_id):
+            return SessionStore(session_id, kv_store=self.session_store)
 
         def ussd_client(self, generate_customer_journey=True, **kwargs):
             class UssdTestClient(object):

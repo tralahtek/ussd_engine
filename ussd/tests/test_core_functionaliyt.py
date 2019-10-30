@@ -308,7 +308,7 @@ class TestSessionManagement(UssdTestCase.BaseUssdTestCase):
         self.assertEqual(req.session_id,
                          self._create_ussd_request(phone_number).session_id
                          )
-        time.sleep(1)
+        time.sleep(2)
 
         # test after one second a new session_id will be created.
         self.assertNotEqual(req.session_id,

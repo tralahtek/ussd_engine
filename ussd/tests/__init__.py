@@ -6,7 +6,7 @@ import requests
 from django.test import LiveServerTestCase
 from django.urls import reverse
 
-from ussd.core import UssdView, render_journey_as_graph, render_journey_as_mermaid_text, UssdRequest
+from ussd.core import render_journey_as_graph, render_journey_as_mermaid_text, UssdEngine
 from ussd.tests.sample_screen_definition import path
 from ussd.store.journey_store.YamlJourneyStore import YamlJourneyStore
 from ussd.session_store import SessionStore
@@ -48,7 +48,7 @@ class UssdTestCase(object):
             if self.validate_ussd:
                 ussd_screens = self.journey_store.get(self.journey_name, version_to_validate)
 
-                is_valid, error_message = UssdView.validate_ussd_journey(
+                is_valid, error_message = UssdEngine.validate_ussd_journey(
                     ussd_screens)
 
                 self.assertEqual(is_valid, expected_validation, error_message)

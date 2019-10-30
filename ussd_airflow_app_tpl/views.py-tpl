@@ -1,5 +1,6 @@
 import os
-from ussd.core import UssdView, UssdRequest
+from ussd.core import UssdRequest
+from ussd_airflow_django.view import UssdView
 from django.http import HttpResponse
 from ussd.store.journey_store.YamlJourneyStore import YamlJourneyStore
 

@@ -1,5 +1,6 @@
-from ussd.core import UssdView, UssdRequest, _customer_journey_files, \
+from ussd.core import UssdRequest, _customer_journey_files, \
     render_journey_as_mermaid_text, convert_error_response_to_mermaid_error
+from ussd_airflow_django.view import UssdView
 from ussd.tests.sample_screen_definition import path
 from django.http import HttpResponse, JsonResponse
 from django.conf import settings

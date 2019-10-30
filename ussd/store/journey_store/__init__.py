@@ -54,8 +54,8 @@ class JourneyStore(object, metaclass=abc.ABCMeta):
 
         # validate if its not in editing mode.
         if not edit_mode:
-            from ussd.core import UssdView
-            is_valid, errors = UssdView.validate_ussd_journey(journey)
+            from ussd.core import UssdEngine
+            is_valid, errors = UssdEngine.validate_ussd_journey(journey)
             if not is_valid:
                 raise ValidationError("invalid journey")
 

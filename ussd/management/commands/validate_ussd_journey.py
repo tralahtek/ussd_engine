@@ -1,10 +1,9 @@
-import staticconf
 import os
 import json
 
 from django.core.management.base import BaseCommand, CommandError
 
-from ussd.core import UssdView
+from ussd.core import UssdEngine
 from ussd.store.journey_store.YamlJourneyStore import load_dict_from_yaml
 
 
@@ -22,7 +21,7 @@ class Command(BaseCommand):
 
             ussd_screens = load_dict_from_yaml(ussd_config)
 
-            is_valid, error_ussd_config_message = UssdView.validate_ussd_journey(
+            is_valid, error_ussd_config_message = UssdEngine.validate_ussd_journey(
                 ussd_screens)
             error_message[ussd_config] = dict(
                 valid=is_valid,

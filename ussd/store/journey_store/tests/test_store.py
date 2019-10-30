@@ -1,7 +1,7 @@
 from django.test import TestCase
 from django.core.exceptions import ValidationError
 from copy import deepcopy
-from ussd.core import UssdView
+from ussd.core import UssdEngine
 from ..DummyStore import DummyStore
 from ..DynamoDb import DynamoDb
 from django.conf import settings
@@ -146,7 +146,7 @@ class TestDriverStore:
             }
 
             # confirm its invalid
-            is_valid, errors = UssdView.validate_ussd_journey(sample_journey_edit_mode)
+            is_valid, errors = UssdEngine.validate_ussd_journey(sample_journey_edit_mode)
             self.assertFalse(is_valid)
 
             # but we can still save it under edit mode

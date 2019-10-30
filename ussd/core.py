@@ -17,11 +17,9 @@ from annoying.functions import get_object_or_None
 from django.conf import settings
 from django.contrib.sessions.backends import signed_cookies
 from django.contrib.sessions.backends.base import CreateError
-from django.http import HttpResponse
 from django.utils import timezone
 from jinja2 import Environment
 from rest_framework.serializers import SerializerMetaclass
-from rest_framework.views import APIView
 from structlog import get_logger
 
 from ussd import defaults as ussd_airflow_variables
@@ -325,7 +323,7 @@ class UssdHandlerAbstract(object, metaclass=UssdHandlerMetaClass):
         self.logger = logger or get_logger(__name__).bind(
             handler=self.handler,
             screen_type=getattr(self, 'screen_type', 'custom_screen'),
-            **ussd_request.all_variables(),
+            **self.ussd_request.all_variables(),
         )
         self.initial_screen = initial_screen
 
@@ -650,165 +648,70 @@ class UssdHandlerAbstract(object, metaclass=UssdHandlerMetaClass):
 NextScreens = namedtuple("NextScreens", "next_screens links")
 
 
-class UssdView(APIView):
-    """
-    To create Ussd View requires the following things:
-        - Inherit from **UssdView** (Mandatory)
-            .. code-block:: python
+class UssdEngine(object):
 
-                from ussd.core import UssdView
-
-        - Define Http method either **get** or **post** (Mandatory)
-            The http method should return Ussd Request
-
-                .. autoclass:: ussd.core.UssdRequest
-
-        - define this varialbe *customer_journey_conf*
-            This is the path of the file that has ussd screens
-            If you want your file to be dynamic implement the
-            following method **get_customer_journey_conf** it
-            will be called by request object
-
-        - define this variable *customer_journey_namespace*
-            Ussd_airflow uses this namespace to save the
-            customer journey content in memory. If you want
-            customer_journey_namespace to be dynamic implement
-            this method **get_customer_journey_namespace** it
-            will be called with request object
-
-        - override HttpResponse
-            In ussd airflow the http method return UssdRequest object
-            not Http response. Then ussd view gets UssdResponse object
-            and convert it to HttpResponse. The default HttpResponse
-            returned is a normal HttpResponse with body being ussd text
-
-            To override HttpResponse returned define this method.
-            **ussd_response_handler** it will be called with
-            **UssdResponse** object.
-
-                .. autoclass:: ussd.core.UssdResponse
-
-    Example of Ussd view
-
-    .. code-block:: python
-
-        from ussd.core import UssdView, UssdRequest
-
-
-        class SampleOne(UssdView):
-
-            def get(self, req):
-                return UssdRequest(
-                    phone_number=req.data['phoneNumber'].strip('+'),
-                    session_id=req.data['sessionId'],
-                    ussd_input=text,
-                    service_code=req.data['serviceCode'],
-                    language=req.data.get('language', 'en')
-                )
-
-    Example of Ussd View that defines its own HttpResponse.
-
-    .. code-block:: python
-
-        from ussd.core import UssdView, UssdRequest
-
-
-        class SampleOne(UssdView):
-
-            def get(self, req):
-                return UssdRequest(
-                    phone_number=req.data['phoneNumber'].strip('+'),
-                    session_id=req.data['sessionId'],
-                    ussd_input=text,
-                    service_code=req.data['serviceCode'],
-                    language=req.data.get('language', 'en')
-                )
-
-            def ussd_response_handler(self, ussd_response):
-                    if ussd_response.status:
-                        res = 'CON' + ' ' + str(ussd_response)
-                        response = HttpResponse(res)
-                    else:
-                        res = 'END' + ' ' + str(ussd_response)
-                        response = HttpResponse(res)
-                    return response
-    """
-
-    def finalize_response(self, request, response, *args, **kwargs):
-
-        if isinstance(response, UssdRequest):
-            self.logger = get_logger(__name__).bind(**response.all_variables())
-            try:
-                ussd_response = self.ussd_dispatcher(response)
-            except Exception as e:
-                # if settings.DEBUG:
-                ussd_response = UssdResponse(str(e))
-            return self.ussd_response_handler(ussd_response)
-        return super(UssdView, self).finalize_response(
-            request, response, args, kwargs)
-
-    def ussd_response_handler(self, ussd_response):
-        return HttpResponse(str(ussd_response))
-
-    def ussd_dispatcher(self, ussd_request):
-
+    def __init__(self, ussd_request: UssdRequest):
+        self.ussd_request = ussd_request
         initial_screen = ussd_request.get_screens('initial_screen')
         self.initial_screen = initial_screen \
             if isinstance(initial_screen, dict) \
             else {"initial_screen": initial_screen}
+        self.logger = get_logger(__name__).bind(**ussd_request.all_variables())
+
+    def ussd_dispatcher(self):
 
         # Clear input and initialize session if we are starting up
-        if '_ussd_state' not in ussd_request.session:
-            ussd_request.input = ''
-            ussd_request.session['_ussd_state'] = {'next_screen': ''}
-            ussd_request.session['ussd_interaction'] = []
-            ussd_request.session['posted'] = False
-            ussd_request.session['submit_data'] = {}
-            ussd_request.session['session_id'] = ussd_request.session_id
-            ussd_request.session['phone_number'] = ussd_request.phone_number
+        if '_ussd_state' not in self.ussd_request.session:
+            self.ussd_request.input = ''
+            self.ussd_request.session['_ussd_state'] = {'next_screen': ''}
+            self.ussd_request.session['ussd_interaction'] = []
+            self.ussd_request.session['posted'] = False
+            self.ussd_request.session['submit_data'] = {}
+            self.ussd_request.session['session_id'] = self.ussd_request.session_id
+            self.ussd_request.session['phone_number'] = self.ussd_request.phone_number
 
-        # update ussd_request variable to session and template variables
+        # update self.ussd_request variable to session and template variables
         # to be used later for jinja2 evaluation
-        ussd_request.session.update(ussd_request.all_variables())
+        self.ussd_request.session.update(self.ussd_request.all_variables())
 
         # for backward compatibility
         # there are some jinja template using ussd_request
         # eg. {{ussd_request.session_id}}
-        ussd_request.session.update(
-            {"ussd_request": ussd_request.all_variables()}
+        self.ussd_request.session.update(
+            {"ussd_request": self.ussd_request.all_variables()}
         )
 
-        self.logger.debug('gateway_request', text=ussd_request.input)
+        self.logger.debug('gateway_request', text=self.ussd_request.input)
 
         # Invoke handlers
-        ussd_response = self.run_handlers(ussd_request)
-        ussd_request.session[ussd_airflow_variables.last_update] = \
+        ussd_response = self.run_handlers()
+        self.ussd_request.session[ussd_airflow_variables.last_update] = \
             utilities.datetime_to_string(datetime.now())
         # Save session
-        ussd_request.session.save()
+        self.ussd_request.session.save()
         self.logger.debug('gateway_response', text=ussd_response.dumps(),
                           input="{redacted}")
 
         return ussd_response
 
-    def run_handlers(self, ussd_request):
+    def run_handlers(self):
 
-        handler = ussd_request.session['_ussd_state']['next_screen'] \
-            if ussd_request.session.get('_ussd_state', {}).get('next_screen') \
+        handler = self.ussd_request.session['_ussd_state']['next_screen'] \
+            if self.ussd_request.session.get('_ussd_state', {}).get('next_screen') \
             else "initial_screen"
 
-        ussd_response = (ussd_request, handler)
+        ussd_response = (self.ussd_request, handler)
 
         if handler != "initial_screen":
             # get start time
             start_time = utilities.string_to_datetime(
-                ussd_request.session["ussd_interaction"][-1]["start_time"])
+                self.ussd_request.session["ussd_interaction"][-1]["start_time"])
             end_time = datetime.now()
             # Report in milliseconds
             duration = (end_time - start_time).total_seconds() * 1000
-            ussd_request.session["ussd_interaction"][-1].update(
+            self.ussd_request.session["ussd_interaction"][-1].update(
                 {
-                    "input": ussd_request.input,
+                    "input": self.ussd_request.input,
                     "end_time": utilities.datetime_to_string(end_time),
                     "duration": duration
                 }
@@ -817,9 +720,9 @@ class UssdView(APIView):
         # Handle any forwarded Requests; loop until a Response is
         # eventually returned.
         while not isinstance(ussd_response, UssdResponse):
-            ussd_request, handler = ussd_response
+            self.ussd_request, handler = ussd_response
 
-            screen_content = ussd_request.get_screens(handler)
+            screen_content = self.ussd_request.get_screens(handler)
 
             screen_type = 'initial_screen' \
                 if handler == "initial_screen" and \
@@ -827,25 +730,25 @@ class UssdView(APIView):
                 else screen_content['type']
 
             ussd_response = _registered_ussd_handlers[screen_type](
-                ussd_request,
+                self.ussd_request,
                 handler,
                 screen_content,
                 initial_screen=self.initial_screen,
                 logger=self.logger
             ).handle()
 
-        ussd_request.session['_ussd_state']['next_screen'] = handler
+        self.ussd_request.session['_ussd_state']['next_screen'] = handler
 
-        ussd_request.session['ussd_interaction'].append(
+        self.ussd_request.session['ussd_interaction'].append(
             {
                 "screen_name": handler,
                 "screen_text": str(ussd_response),
-                "input": ussd_request.input,
+                "input": self.ussd_request.input,
                 "start_time": utilities.datetime_to_string(datetime.now())
             }
         )
         # Attach session to outgoing response
-        ussd_response.session = ussd_request.session
+        ussd_response.session = self.ussd_request.session
 
         return ussd_response
 

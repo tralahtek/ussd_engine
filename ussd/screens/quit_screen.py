@@ -20,7 +20,7 @@ class QuitScreen(UssdHandlerAbstract):
 
     def handle(self):
         # set session has expired
-        self.ussd_request.session[ussd_airflow_variables.expiry] = True
+        self.ussd_request.session.set_expiry(-1)
 
         if self.initial_screen.get('ussd_report_session'):
             # schedule a task to report session

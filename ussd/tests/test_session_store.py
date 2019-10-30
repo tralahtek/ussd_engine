@@ -1,14 +1,15 @@
-from unittest import TestCase, mock
+from unittest import TestCase
 from simplekv.fs import FilesystemStore
-from ussd.session_store import SessionStore, SESSION_COOKIE_AGE, UpdateError
+from ussd.session_store import SessionStore, SESSION_COOKIE_AGE
 from datetime import datetime, timedelta
 from freezegun import freeze_time
+import uuid
 
 
 class SessionTest(object):
     class SessionTestsMixin(TestCase):
 
-        def backend(self, session_key=None):
+        def backend(self, session_key=None) -> SessionStore:
             raise NotImplemented
 
         def setUp(self):
@@ -247,6 +248,37 @@ class SessionTest(object):
             data = {'a test key': 'a test value'}
             encoded = self.session.encode(data)
             self.assertEqual(self.session.decode(encoded), data)
+
+        def test_cycle_data(self):
+            session_id = str(uuid.uuid4())
+            session = self.backend(session_id)
+            session['name'] = 'test_cycle_data'
+            session['session_id'] = session_id
+            session.save()
+
+            # before cycling data
+            # check data has been saved
+            self.assertEquals(session.items(),
+                              self.backend(session_id).items())
+
+            # saving items before they are cleared
+            pre_session_items = session.items()
+
+            new_session_id = session.cycle_data()
+
+            # check a new session id was generated
+            self.assertNotEqual(session_id, new_session_id)
+
+            new_session = self.backend(new_session_id)
+            # sanity check
+            self.assertEquals(new_session['session_id'], session_id)
+            # check data is the same
+            self.assertEquals(new_session.items(), pre_session_items)
+
+            # check that data has been removed in the previous version
+            previous_session = self.backend(session_id)
+            del previous_session['_session_expiry']
+            self.assertEquals(list(previous_session.items()), [])
 
 
 class TestWithFileObject(SessionTest.SessionTestsMixin):

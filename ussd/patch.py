@@ -1,5 +1,5 @@
 import sys
-from os import environ
+from os import environ, system
 
 from django.conf import settings
 from django.core import management
@@ -29,6 +29,8 @@ if sys.argv[1] == "test":
     def custom_teardown_database(*args, **kwargs):
         # here we delete dynamodb table
         management.call_command("delete_dynamodb_table")
+        system('rm -rf ./session_data')
+        system('rm -rf ./session_data_test')
         return original_teardown_databases(*args, **kwargs)
 
     DiscoverRunner.teardown_databases = custom_teardown_database

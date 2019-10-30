@@ -297,22 +297,28 @@ class TestSessionManagement(UssdTestCase.BaseUssdTestCase):
     def _create_ussd_request(phone_number):
         return UssdRequest(None, phone_number, '', 'en',
                            use_built_in_session_management=True,
-                           expiry=1, journey_name='sample_journey',
+                           expiry=2, journey_name='sample_journey',
                            journey_version='sample_customer_journey.yml')
 
     def test_session_expiry(self):
         phone_number = 200
         req = self._create_ussd_request(phone_number)
+        req.session['foo'] = 'bar'
+        prev_items = req.session.items()
+        req.session.save()
 
-        # test a new session created within the time session id remains
-        self.assertEqual(req.session_id,
-                         self._create_ussd_request(phone_number).session_id
+        # test a new session created within the time session data remains
+        self.assertEqual(req.session['foo'],
+                         self._create_ussd_request(phone_number).session['foo']
                          )
         time.sleep(2)
 
-        # test after one second a new session_id will be created.
-        self.assertNotEqual(req.session_id,
-                            self._create_ussd_request(phone_number).session_id
+        # test after one second a session data has been cleared.
+        new_req = self._create_ussd_request(phone_number)
+        self.assertIsNone(new_req.session.get('foo'))
+        # and previous data stored under another session id
+        self.assertNotEqual(self.ussd_session(new_req.session[ussd_airflow_variables.previous_session_id]),
+                            prev_items
                             )
 
     def test_session_expiry_using_inactivity(self):
@@ -341,16 +347,15 @@ class TestSessionManagement(UssdTestCase.BaseUssdTestCase):
         # been closed
 
         self.assertEqual(
-            req.session_id,
-            self._create_ussd_request(phone_number).session_id
+            req.session['name'],
+            self._create_ussd_request(phone_number).session['name']
         )
 
-        time.sleep(0.3)
+        time.sleep(3)
 
         # test now the session has been closed
-        self.assertNotEqual(
-            req.session_id,
-            self._create_ussd_request(phone_number).session_id
+        self.assertIsNone(
+            self._create_ussd_request(phone_number).session.get('name')
         )
 
     def test_quit_screen_terminates_session(self):

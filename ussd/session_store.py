@@ -10,7 +10,7 @@ import base64
 from datetime import datetime, timedelta
 import json
 from collections import OrderedDict
-
+from ussd import defaults as ussd_airflow_variables
 
 def get_random_string(length=12,
                       allowed_chars='abcdefghijklmnopqrstuvwxyz'
@@ -24,13 +24,26 @@ def get_random_string(length=12,
     return ''.join(random.choice(allowed_chars) for i in range(length))
 
 
+date_format = '%Y-%m-%dT%H:%M:%S.%f'
+
+
 class CustomJsonEncoder(json.JSONEncoder):
 
     def default(self, obj):
         try:
             return json.JSONEncoder.default(self, obj)
         except TypeError:
+            if isinstance(obj, datetime):
+                return obj.strftime(date_format)
             return obj.__class__.__name__
+
+
+def datetime_parser(dct):
+    dct = OrderedDict(dct)
+    if dct.get(ussd_airflow_variables.session_expiry):
+        dct[ussd_airflow_variables.session_expiry] = \
+            datetime.strptime(dct[ussd_airflow_variables.session_expiry], date_format)
+    return dct
 
 
 class JSONSerializer:
@@ -42,7 +55,7 @@ class JSONSerializer:
         return json.dumps(obj, separators=(',', ':'), cls=CustomJsonEncoder).encode('latin-1')
 
     def loads(self, data):
-        return json.loads(data.decode('latin-1'), object_pairs_hook=OrderedDict)
+        return json.loads(data.decode('latin-1'), object_pairs_hook=datetime_parser)
 
 
 # session_key should not be case sensitive because some backends can store it
@@ -142,6 +155,8 @@ class SessionStore(object):
         if self.session_key is None:
             return self.create()
         data = self._get_session(no_load=must_create)
+
+        self.set_expiry(self.get_expiry_date())
         self.kv_store.put(self.session_key, self.encode(data))
 
     def update(self, dict_):
@@ -159,6 +174,9 @@ class SessionStore(object):
 
     def items(self):
         return self._session.items()
+
+    def key_pair(self):
+        return self._session
 
     def clear(self):
         # To avoid unnecessary persistent storage accesses, we set up the
@@ -262,7 +280,7 @@ class SessionStore(object):
         try:
             expiry = kwargs['expiry']
         except KeyError:
-            expiry = self.get('_session_expiry')
+            expiry = self.get(ussd_airflow_variables.session_expiry)
 
         if isinstance(expiry, datetime):
             return expiry
@@ -293,7 +311,7 @@ class SessionStore(object):
             return
         if isinstance(value, timedelta):
             value = datetime.now() + value
-        self['_session_expiry'] = value
+        self[ussd_airflow_variables.session_expiry] = value
 
     def flush(self):
         """
@@ -314,3 +332,20 @@ class SessionStore(object):
         self._session_cache = data
         if key:
             self.delete(key)
+
+    def cycle_data(self):
+        """
+        Creates a new session key saves the current data to that session key clears data of
+        the current session key
+        :return:
+        """
+        original_key = self.session_key
+        # will set a new key and save data to that key
+        self.create()
+        new_key = self.session_key
+
+        self._session_key = original_key
+        self.clear()
+        self.save()
+
+        return new_key

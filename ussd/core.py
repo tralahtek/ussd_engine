@@ -9,22 +9,15 @@ import typing
 from collections import namedtuple
 from copy import copy
 from datetime import datetime
-from importlib import import_module
 from urllib.parse import unquote
 
 import requests
-from annoying.functions import get_object_or_None
-from django.conf import settings
-from django.contrib.sessions.backends import signed_cookies
-from django.contrib.sessions.backends.base import CreateError
-from django.utils import timezone
 from jinja2 import Environment
 from rest_framework.serializers import SerializerMetaclass
 from structlog import get_logger
 
 from ussd import defaults as ussd_airflow_variables
 from ussd import utilities
-from ussd.models import SessionLookup
 from ussd.tasks import report_session
 from .graph import Graph, Link, Vertex, convert_graph_to_mermaid_text
 from .screens.serializers import UssdBaseSerializer
@@ -64,21 +57,6 @@ def register_filter(func_name, *args, **kwargs):
 def register_function(func_name, *args, **kwargs):
     function_name = func_name.__name__
     _built_in_functions[function_name] = func_name
-
-
-def get_session_engine():
-    session_engine = import_module(getattr(settings, "USSD_SESSION_ENGINE",
-                                           settings.SESSION_ENGINE))
-    if session_engine is signed_cookies:
-        raise ValueError("You cannot use channels session "
-                         "functionality with signed cookie sessions!")
-    return session_engine
-
-
-def generate_session_id():
-    session_store = get_session_engine().SessionStore()
-    session_store.save()  # generate session_key
-    return session_store.session_key
 
 
 class UssdRequest(object):
@@ -160,16 +138,12 @@ class UssdRequest(object):
                 "has not been enabled"
             )
 
-        self.session_store_backend = session_store_backend
+        if session_id is None:
+            session_id = str(phone_number)
 
-        if use_built_in_session_management:
-            session_id = self.get_or_create_session_id(phone_number)
-        else:
-            # if session id is less than 8 should provide the
-            # suplimentary characters with 's'
-            if len(str(
-                    session_id)) < 8 and not use_built_in_session_management:
-                session_id = 's' * (8 - len(str(session_id))) + session_id
+        # for support when using django session table
+        if len(str(session_id)) < 8:
+            session_id = 's' * (8 - len(str(session_id))) + session_id
 
         self.phone_number = phone_number
         self.input = unquote(ussd_input)
@@ -178,7 +152,10 @@ class UssdRequest(object):
         self.session_id = session_id
 
         # session store config
-        self.session = self.get_session_from_store(self.session_id)
+        self.use_built_in_session_management = use_built_in_session_management
+        self.session_store_backend = session_store_backend
+        self.session = self.get_session()
+        self.session.set_expiry(self.expiry)
 
         # journey config
         if journey_store is None:
@@ -210,38 +187,28 @@ class UssdRequest(object):
 
         return all_variables
 
-    def get_or_create_session_id(self, user_id):
-        session_mapping = get_object_or_None(SessionLookup, user_id=user_id)
+    def built_in_session_management(self):
+        if self.session_id is None:
+            raise TypeError("Session id should not be null")
 
-        # if its missing create a new one.
-        if session_mapping is None:
-            session_mapping = SessionLookup.objects.create(
-                user_id=user_id,
-                session_id=generate_session_id()
-            )
-        else:
-            session = self.get_session_from_store(session_mapping.session_id)
+        session = self.get_session_from_store()
 
-            # get last time session was updated
-            if session.get(ussd_airflow_variables.last_update):
-                last_updated = utilities.string_to_datetime(
-                    session[ussd_airflow_variables.last_update])
-            else:
-                last_updated = timezone.make_naive(session_mapping.updated_at)
+        # get last time session was updated
+        if session.get_expiry_age() <= 0:
+            # clear this session id
+            # and save the data in another session key
+            previous_session_key = session.cycle_data()
+            session[ussd_airflow_variables.previous_session_id] = previous_session_key
+        return session
 
-            # check inactivity or if session has been closed
-            inactivity_duration = (datetime.now() - last_updated).total_seconds()
-            if inactivity_duration > self.expiry or \
-                    session.get(ussd_airflow_variables.expiry):
-                # update session_mapping with the new session_id
-                session_mapping.session_id = generate_session_id()
-                session_mapping.save()
-
-        return session_mapping.session_id
-
-    def get_session_from_store(self, session_id):
-        return SessionStore(session_key=session_id,
+    def get_session_from_store(self) -> SessionStore:
+        return SessionStore(session_key=self.session_id,
                             kv_store=self.session_store_backend)
+
+    def get_session(self) -> SessionStore:
+        if self.use_built_in_session_management:
+            return self.built_in_session_management()
+        return self.get_session_from_store()
 
     def get_screens(self, screen_name=None):
         return self.journey_store.get(
@@ -685,8 +652,7 @@ class UssdEngine(object):
 
         # Invoke handlers
         ussd_response = self.run_handlers()
-        self.ussd_request.session[ussd_airflow_variables.last_update] = \
-            utilities.datetime_to_string(datetime.now())
+
         # Save session
         self.ussd_request.session.save()
         self.logger.debug('gateway_response', text=ussd_response.dumps(),

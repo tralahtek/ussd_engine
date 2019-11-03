@@ -2,11 +2,9 @@ import json
 import os
 import uuid
 
-import requests
-from django.test import LiveServerTestCase
-from django.urls import reverse
 
-from ussd.core import render_journey_as_graph, render_journey_as_mermaid_text, UssdEngine
+from unittest import TestCase
+from ussd.core import render_journey_as_graph, render_journey_as_mermaid_text, UssdEngine, UssdRequest, UssdResponse
 from ussd.tests.sample_screen_definition import path
 from ussd.store.journey_store.YamlJourneyStore import YamlJourneyStore
 from ussd.session_store import SessionStore
@@ -18,13 +16,13 @@ class UssdTestCase(object):
     this contains two test that are required in each screen test case
     """
 
-    class BaseUssdTestCase(LiveServerTestCase):
+    class BaseUssdTestCase(TestCase):
         validate_ussd = True
 
         session_store = FilesystemStore("./session_data")
 
         def setUp(self):
-            self.journey_store = YamlJourneyStore("./ussd/tests/sample_screen_definition")
+            self.journey_store = YamlJourneyStore("/usr/src/app/ussd/tests/sample_screen_definition")
 
             file_prefix = self.__module__.split('.')[-1].replace('test_', '')
             self.journey_name = file_prefix
@@ -123,41 +121,44 @@ class UssdTestCase(object):
 
         def ussd_client(self, generate_customer_journey=True, **kwargs):
             class UssdTestClient(object):
-                def __init__(self, host, session_id=None, phone_number=200,
-                             language='en', extra_payload={},
-                             service_code="test"):
+                def __init__(self, session_id=None, phone_number=200,
+                             language='en', extra_payload=None, ):
+
+                    if extra_payload is None:
+                        extra_payload = {}
                     self.phone_number = phone_number
                     self.language = language
                     self.session_id = session_id \
                         if session_id is not None \
                         else str(uuid.uuid4())
-                    self.url = host + reverse('africastalking_url')
                     self.extra_payload = extra_payload
-                    self.service_code = service_code
 
-                def send_(self, ussd_input):
+                def send(self, ussd_input, raw=False):
                     payload = {
-                        "sessionId": self.session_id,
-                        "text": ussd_input,
-                        "phoneNumber": self.phone_number,
-                        "serviceCode": self.service_code,
-                        "language": self.language
+                        "session_id": self.session_id,
+                        "ussd_input": ussd_input,
+                        "phone_number": self.phone_number,
+                        "language": self.language,
                     }
                     payload.update(self.extra_payload)
-                    response = requests.post(
-                        url=self.url,
-                        data=payload
-                    )
-                    return response
 
-                def send(self, ussd_input):
-                    return self.send_(ussd_input).content.decode()
+                    ussd_request = UssdRequest(**payload)
 
-            if generate_customer_journey:
-                customer_journey_conf = {
-                    'journey_name': self.journey_name,
-                    'journey_version': self.valid_version
-                }
-                kwargs['extra_payload'] = customer_journey_conf
+                    response = UssdEngine(ussd_request).ussd_dispatcher()
 
-            return UssdTestClient(self.live_server_url, **kwargs)
+                    if raw:
+                        return response
+                    return str(response)
+
+            customer_journey_conf = {
+                'journey_name': self.journey_name,
+                'journey_version': self.valid_version,
+                "journey_store": self.journey_store
+            }
+
+            if kwargs.get('extra_payload'):
+                customer_journey_conf.update(kwargs['extra_payload'])
+
+            kwargs['extra_payload'] = customer_journey_conf
+
+            return UssdTestClient(**kwargs)

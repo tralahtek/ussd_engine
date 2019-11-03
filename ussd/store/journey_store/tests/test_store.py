@@ -1,11 +1,8 @@
-from django.test import TestCase
-from django.core.exceptions import ValidationError
+from ussd.exceptions import ValidationError
 from copy import deepcopy
 from ussd.core import UssdEngine
-from ..DummyStore import DummyStore
-from ..DynamoDb import DynamoDb
-from django.conf import settings
-from ..YamlJourneyStore import YamlJourneyStore
+from ussd.store.journey_store import DummyStore, DynamoDb, YamlJourneyStore
+from unittest import TestCase
 
 
 class TestDriverStore:
@@ -169,18 +166,26 @@ class TestDummyStore(TestDriverStore.BaseDriverStoreTestCase):
 
     @staticmethod
     def setup_driver() -> DummyStore:
-        return DummyStore()
+        return DummyStore.DummyStore()
 
 
 class TestDynamodb(TestDriverStore.BaseDriverStoreTestCase):
+    table_name = "test_dynamodb_journey_store"
 
-    @staticmethod
-    def setup_driver() -> DynamoDb:
-        return DynamoDb(settings.DYNAMODB_TABLE, "http://dynamodb:8000")
+    @classmethod
+    def setUpClass(cls) -> None:
+        DynamoDb.create_table(table_name=cls.table_name)
+
+    @classmethod
+    def tearDownClass(cls) -> None:
+        DynamoDb.delete_table(table_name=cls.table_name)
+
+    def setup_driver(self) -> DynamoDb:
+        return DynamoDb.DynamoDb(self.table_name, "http://dynamodb:8000")
 
 
 class TestYamlJourneyStore(TestDriverStore.BaseDriverStoreTestCase):
 
     @staticmethod
     def setup_driver() -> YamlJourneyStore:
-        return YamlJourneyStore()
+        return YamlJourneyStore.YamlJourneyStore()

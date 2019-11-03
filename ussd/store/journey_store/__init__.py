@@ -2,7 +2,7 @@
 Customer journey are stored in a document store.
 Any engine that implements this interface can be integrated with journey store.
 """
-from django.core.exceptions import ValidationError
+from ussd.exceptions import ValidationError
 import abc
 
 

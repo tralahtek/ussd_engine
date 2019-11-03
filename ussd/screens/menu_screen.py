@@ -5,8 +5,6 @@ from rest_framework.serializers import ListField, ValidationError, \
     CharField
 from django.core.paginator import Paginator
 import textwrap
-from django.conf import settings
-from ussd import defaults
 from ussd.graph import Link, Vertex
 import typing
 
@@ -354,7 +352,7 @@ class MenuScreen(UssdHandlerAbstract):
             input_value = option.get('input_value') or i
             input_display = option.get('input_display') or "{index}{index_format}".format(
                 index=input_value,
-                index_format=getattr(settings, 'USSD_INDEX_FORMAT', defaults.index_format)
+                index_format=self.ussd_request.menu_index_format
             )
 
             text = "{display_option}{text}".format(
@@ -401,7 +399,7 @@ class MenuScreen(UssdHandlerAbstract):
 
             index_text = "{index}{index_format}".format(
                 index=index,
-                index_format=getattr(settings, 'USSD_INDEX_FORMAT', defaults.index_format))
+                index_format=self.ussd_request.menu_index_format)
 
             list_items.append(
                 ListItem(

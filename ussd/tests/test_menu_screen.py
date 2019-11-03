@@ -136,19 +136,16 @@ class TestMenuHandler(UssdTestCase.BaseUssdTestCase):
         # choose 0 to go back
         self.assertEqual(self.choose_meal, ussd_client.send('0'))
 
-    @override_settings(
-        USSD_INDEX_FORMAT='& '
-    )
     def test_index_format(self):
         # Test for menu options
-        ussd_client = self.ussd_client()
+        ussd_client = self.ussd_client(extra_payload=dict(menu_index_format="& "))
         response = ussd_client.send('')
         expected_text = self.choose_meal
         expected_text = expected_text.replace('. ', '& ')
         self.assertEqual(expected_text, response)
 
         # Test for list options
-        ussd_client = self.ussd_client()
+        ussd_client = self.ussd_client(extra_payload=dict(menu_index_format="& "))
         self.add_vegetable_list_in_session(ussd_client)
 
         # dial in

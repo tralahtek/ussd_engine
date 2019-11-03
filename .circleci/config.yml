@@ -20,16 +20,9 @@ jobs:
       - *aws_setup
 
       - run:
-          name: start the containers
-          command: |
-            docker-compose up -d
-            sleep 10
-            curl --retry 20 --retry-delay 5 -v http://localhost:8007
-
-      - run:
           name: Running tests
           command: |
-            docker-compose run app bash -c 'coverage run --omit=*test*,*ven* manage.py test && bash <(curl -s https://codecov.io/bash) && python-codacy-coverage -r coverage.xml'
+            make test use_cov=yes report_cov=yes
   deploy:
     <<: *defaults
     steps:

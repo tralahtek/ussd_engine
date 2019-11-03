@@ -145,7 +145,7 @@ class UssdRequest(object):
         if len(str(session_id)) < 8:
             session_id = 's' * (8 - len(str(session_id))) + session_id
 
-        self.phone_number = phone_number
+        self.phone_number = str(phone_number)
         self.input = unquote(ussd_input)
         self.language = language
         self.default_language = default_language or 'en'
@@ -165,8 +165,12 @@ class UssdRequest(object):
         self.journey_name = journey_name
         self.journey_version = journey_version
 
+        # screen configs
+        self.menu_index_format = kwargs.get('menu_index_format', ". ")
+
         for key, value in kwargs.items():
-            setattr(self, key, value)
+            if not hasattr(self, key):
+                setattr(self, key, value)
 
     def forward(self, handler_name):
         """

@@ -1,15 +1,14 @@
 from ..journey_store import JourneyStore
 import boto3
 from structlog import get_logger
-from django.conf import settings
 from botocore.config import Config
 from copy import deepcopy
 from boto3.dynamodb.conditions import Key
+import os
 
-BOTO_CORE_CONFIG = getattr(
-    settings, 'BOTO_CORE_CONFIG', None)
-USE_LOCAL_DYNAMODB_SERVER = getattr(
-    settings, 'USE_LOCAL_DYNAMODB_SERVER', False)
+
+BOTO_CORE_CONFIG = os.environ.get('BOTO_CORE_CONFIG', None)
+USE_LOCAL_DYNAMODB_SERVER = os.environ.get('USE_LOCAL_DYNAMODB_SERVER', False)
 
 logger = get_logger(__name__)
 
@@ -59,6 +58,41 @@ def dynamodb_table(table: str, endpoint=None):
     if not _DYNAMODB_TABLE.get(table):
         _DYNAMODB_TABLE[table] = dynamodb_connection_factory(endpoint=endpoint).Table(table)
     return _DYNAMODB_TABLE[table]
+
+
+def create_table(table_name: str):
+
+    params = {
+        'TableName': table_name,
+        'KeySchema': [
+            {'AttributeName': "journeyName", 'KeyType': "HASH"},  # Partition key
+            {'AttributeName': "version", 'KeyType': "RANGE"}  # Sort key
+        ],
+        'AttributeDefinitions': [
+            {'AttributeName': "journeyName", 'AttributeType': "S"},
+            {'AttributeName': "version", 'AttributeType': "S"}
+        ],
+        'ProvisionedThroughput': {
+            'ReadCapacityUnits': 10,
+            'WriteCapacityUnits': 10
+        }
+    }
+
+    dynamodb = dynamodb_connection_factory(low_level=True, endpoint="http://dynamodb:8000")
+    # Create the table
+    dynamodb.create_table(**params)
+
+    # Wait for the table to exist before exiting
+    print('Waiting for', table_name, '...')
+    waiter = dynamodb.get_waiter('table_exists')
+    waiter.wait(TableName=table_name)
+
+
+def delete_table(table_name: str):
+    connection = dynamodb_connection_factory(low_level=True, endpoint="http://dynamodb:8000")
+    connection.delete_table(
+        TableName=table_name
+    )
 
 
 class DynamoDb(JourneyStore):

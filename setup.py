@@ -1,6 +1,6 @@
 from setuptools import setup, find_packages
 import os
-from ussd import VERSION
+from ussd.version import VERSION
 
 
 def _strip_comments(l):
@@ -33,10 +33,10 @@ def reqs(*f):
     return [req for subreq in _reqs(*f) for req in subreq]
 
 setup(
-    name='ussd_airflow',
+    name='ussd_airflow_engine',
     version=VERSION,
     packages=find_packages(exclude=('ussd_airflow',)),
-    url='https://github.com/mwaaas/ussd_airflow',
+    url='https://github.com/ussd-airflow/ussd_engine',
     install_requires=reqs('default.txt'),
     include_package_data=True,
     license='MIT',

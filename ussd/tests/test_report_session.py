@@ -2,21 +2,17 @@ from unittest import mock
 from uuid import uuid4
 
 from celery.exceptions import MaxRetriesExceededError
-from django.http.response import JsonResponse
-from django.test import override_settings
 
 from ussd.tasks import report_session
 from ussd.tests import UssdTestCase
+from ussd.tests.utils import MockResponse
+from celery import current_app
 
 
-@override_settings(
-    CELERY_EAGER_PROPAGATES_EXCEPTIONS=True,
-    CELERY_ALWAYS_EAGER=True,
-    BROKER_BACKEND='memory'
-)
 class TestingUssdReportSession(UssdTestCase.BaseUssdTestCase):
 
     def setUp(self):
+        current_app.conf.task_always_eager = True
         super(TestingUssdReportSession, self).setUp()
         self.journey_name = "sample_journey"
         self.valid_version = "sample_report_session"
@@ -163,7 +159,7 @@ class TestingUssdReportSession(UssdTestCase.BaseUssdTestCase):
 
     @mock.patch('ussd.core.requests.request')
     def test_http_call(self, mock_request):
-        mock_response = JsonResponse({"balance": 250})
+        mock_response = MockResponse({"balance": 250})
         mock_request.return_value = mock_response
 
         session = self.ussd_session(str(uuid4()))
@@ -214,7 +210,7 @@ class TestingUssdReportSession(UssdTestCase.BaseUssdTestCase):
 
     @mock.patch("ussd.tasks.requests.request")
     def test_if_session_is_already_posted_wont_post_again(self, mock_request):
-        mock_response = JsonResponse({"balance": 250})
+        mock_response = MockResponse({"balance": 250})
         mock_request.return_value = mock_response
 
         session = self.ussd_session(str(uuid4()))
@@ -259,7 +255,7 @@ class TestingUssdReportSession(UssdTestCase.BaseUssdTestCase):
     @mock.patch("requests.request")
     @mock.patch.object(report_session, 'retry')
     def test_retry(self, mock_retry, mock_request):
-        mock_response = JsonResponse({"balance": 250},
+        mock_response = MockResponse({"balance": 250},
                                      status=400
                                      )
         mock_request.return_value = mock_response
@@ -287,7 +283,7 @@ class TestingUssdReportSession(UssdTestCase.BaseUssdTestCase):
     @mock.patch("ussd.core.requests.request")
     @mock.patch.object(report_session, 'retry')
     def test_maximum_retries(self, mock_retry, mock_request):
-        mock_response = JsonResponse({"balance": 250},
+        mock_response = MockResponse({"balance": 250},
                                      status=400
                                      )
         mock_request.return_value = mock_response

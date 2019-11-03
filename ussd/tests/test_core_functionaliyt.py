@@ -2,7 +2,7 @@ import time
 from collections import OrderedDict
 from datetime import datetime
 
-from django.test import TestCase
+from unittest import TestCase
 from freezegun import freeze_time
 from rest_framework import serializers
 
@@ -114,21 +114,6 @@ class TestUssdRequestCreation(TestCase):
             use_built_in_session_management=True,
             journey_name = "sample_journey",
             journey_version = "sample_customer_journey.yml"
-        )
-
-
-class TestCoreView(UssdTestCase.BaseUssdTestCase):
-    validate_ussd = False
-
-    def test_africas_talking_is_picking_settings_journey(self):
-        ussd_client = self.ussd_client(generate_customer_journey=False)
-
-        # dial in
-        response = ussd_client.send('')
-
-        self.assertEqual(
-            "Enter your name\n",
-            response
         )
 
 
@@ -289,7 +274,8 @@ class TestSessionManagement(UssdTestCase.BaseUssdTestCase):
             extra_payload={
                 "use_built_in_session_management": True,
                 'journey_name': "sample_journey",
-                'journey_version': "sample_used_for_testing_session_management"
+                'journey_version': "sample_used_for_testing_session_management",
+                "session_id": None
             }
         )
 

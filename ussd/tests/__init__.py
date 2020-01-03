@@ -68,7 +68,7 @@ class UssdTestCase(object):
                                                "validation_error_message",
                                                {}))
             except Exception as e:
-                if hasattr(self, "expected_error") and not isinstance(e, self.__getattribute__("expected_error")):
+                if not (hasattr(self, "expected_error") and isinstance(e, self.__getattribute__("expected_error"))):
                     raise e
 
         def test_rendering_graph_js(self):

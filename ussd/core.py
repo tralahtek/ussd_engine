@@ -26,6 +26,7 @@ from ussd.store.journey_store.YamlJourneyStore import YamlJourneyStore
 from simplekv import KeyValueStore
 from simplekv.fs import FilesystemStore
 from ussd.session_store import SessionStore
+from marshmallow.schema import SchemaMeta
 
 _registered_ussd_handlers = {}
 _registered_filters = {}
@@ -267,7 +268,7 @@ class UssdHandlerMetaClass(type):
                             attribute, name)
                     )
 
-            if not isinstance(attr['serializer'], SerializerMetaclass):
+            if not isinstance(attr['serializer'], SerializerMetaclass) and not isinstance(attr['serializer'], SchemaMeta):
                 raise InvalidAttribute(
                     "serializer should be a "
                     "instance of {serializer}".format(
@@ -457,14 +458,23 @@ class UssdHandlerAbstract(object, metaclass=UssdHandlerMetaClass):
     @classmethod
     def validate(cls, screen_name: str, ussd_content: dict) -> (bool, dict):
         screen_content = ussd_content[screen_name]
-        # adding screen name in context might be needed by validator
-        ussd_content['screen_name'] = screen_name
-        validation = cls.serializer(data=screen_content,
-                                    context=ussd_content)
-        del ussd_content['screen_name']
-        if validation.is_valid():
-            return True, {}
-        return False, validation.errors
+
+        # todo remove serializer completely
+        if isinstance(cls.serializer, SerializerMetaclass):
+            # adding screen name in context might be needed by validator
+            ussd_content['screen_name'] = screen_name
+            validation = cls.serializer(data=screen_content,
+                                        context=ussd_content)
+            if validation.is_valid():
+                del ussd_content['screen_name']
+                return True, {}
+            else:
+                del ussd_content['screen_name']
+                return False, validation.errors
+        else:
+            schema = cls.serializer(context=ussd_content)
+            errors = schema.validate(screen_content)
+            return False if errors else True, errors
 
     @staticmethod
     def _contains_vars(data):

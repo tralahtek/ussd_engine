@@ -38,8 +38,8 @@ class WithDictField(fields.Field):
 
 
 class ItemsSchema(UssdTextSchema, NextUssdScreenSchema):
-    value = fields.Str(required=True, error_messages={"required": "This field is required."})
-    session_key = fields.Str(required=True, error_messages={"required": "This field is required."})
+    value = fields.Str(required=True)
+    session_key = fields.Str(required=True)
     with_items = WithItemField(required=False, default=None)
     with_dict = WithDictField(required=False, default=None)
 

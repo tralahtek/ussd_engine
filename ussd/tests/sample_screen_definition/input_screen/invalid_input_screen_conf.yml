@@ -7,8 +7,6 @@ enter_height:
   # invalid validator, missing text
   validators:
     - regex: ^[0-9]{1,7}$
-  ussd_report_session:
-    name: invalid_ussd_report_session
 
 # missing input_indentifier and invalid options
 enter_age:
@@ -36,7 +34,7 @@ show_information:
 invalid_next_screen:
   type: input_screen
   text: contains invalid next screen format
-  input_identifier: 56
+  input_identifier: "56"
   next_screen:
     - condition: 5 > 9
 

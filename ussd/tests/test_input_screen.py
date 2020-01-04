@@ -5,14 +5,14 @@ class TestInputHandler(UssdTestCase.BaseUssdTestCase):
     validation_error_message = dict(
         enter_height={
             "validators": {
-                'text': ['This field is required.']
+                0: {'text': ['This field is required.']}
             },
             "next_screen": ['This field is required.']
         },
         enter_age={
             "input_identifier": ['This field is required.'],
             "next_screen": ['thank_you_screen is missing in ussd journey'],
-            "options": ['Expected a list of items but got type "bool".']
+            "options": ['Not a valid list.']
         },
         show_information={
             "type": ['Invalid screen type not supported']

@@ -6,8 +6,8 @@ from marshmallow import Schema, fields, validate
 
 
 class VariableDefinitionSchema(Schema):
-    file = fields.Str(required=True, error_messages={"required": "This field is required."})
-    namespace = fields.Str(required=True, error_messages={"required": "This field is required."})
+    file = fields.Str(required=True)
+    namespace = fields.Str(required=True)
 
 
 class ValidateResponseSerializerSchema(Schema):
@@ -15,11 +15,9 @@ class ValidateResponseSerializerSchema(Schema):
 
 
 class UssdReportSessionSchema(Schema):
-    session_key = fields.Str(validate=validate.Length(max=100), required=True,
-                             error_messages={"required": "This field is required."})
-    validate_response = fields.List(fields.Nested(ValidateResponseSerializerSchema), required=True,
-                                    error_messages={"required": "This field is required."})
-    request_conf = fields.Dict(required=True, error_messages={"required": "This field is required."})
+    session_key = fields.Str(validate=validate.Length(max=100), required=True)
+    validate_response = fields.List(fields.Nested(ValidateResponseSerializerSchema), required=True)
+    request_conf = fields.Dict(required=True)
 
 
 class PaginatorConfigSchema(Schema):

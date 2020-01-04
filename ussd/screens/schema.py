@@ -30,7 +30,7 @@ class UssdBaseScreenSchema(Schema):
 
 
 class UssdTextSchema(Schema):
-    text = UssdTextField(required=True, error_messages={"required": "This field is required."})
+    text = UssdTextField(required=True)
 
 
 class UssdContentBaseSchema(UssdBaseScreenSchema, UssdTextSchema):
@@ -52,12 +52,16 @@ class NextUssdScreenField(fields.Field):
 
 
 class NextUssdScreenSchema(Schema):
-    next_screen = NextUssdScreenField(required=True, error_messages={"required": "This field is required."})
+    next_screen = NextUssdScreenField(required=True)
 
     @validates("next_screen")
     def validate_next_screen(self, value):
         for next_screen_config in value:
-            next_screen = next_screen_config['next_screen']
+            next_screen = next_screen_config.get('next_screen')
+            if not next_screen:
+                raise ValidationError(
+                    {'next_screen': ['This field is required.']}
+                )
             if next_screen not in self.context.keys():
                 raise ValidationError(
                     "{screen} is missing in ussd journey".format(screen=next_screen)

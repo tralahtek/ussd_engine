@@ -49,7 +49,7 @@ class TestMenuHandler(UssdTestCase.BaseUssdTestCase):
 
     validation_error_message = dict(
         choose_meal=dict(
-            non_field_errors=[
+            _schema=[
                 'options field is required or items is required'
             ]
         ),
@@ -85,8 +85,7 @@ class TestMenuHandler(UssdTestCase.BaseUssdTestCase):
                 value=['This field is required.'],
                 session_key=['This field is required.'],
                 next_screen=['This field is required.'],
-                with_items=['with_items or with_dict field is required'],
-                with_dict=['with_items or with_dict field is required']
+                _schema=['with_items or with_dict field is required'],
             )
         )
     )

@@ -23,10 +23,6 @@ class UssdBaseSerializer(serializers.Serializer):
         return value
 
 
-class UssdBaseScreenSchema(Schema):
-    type = fields.Str(required=True)
-
-
 class UssdTextField(serializers.DictField):
     """
     Ussd text that's going to be displayed to the user.
@@ -106,26 +102,6 @@ class NextUssdScreenSerializer(serializers.Serializer):
                 if err.detail.get('next_screen'):
                     err.detail['next_screen'] = err.detail['next_screen'][0]['next_screen']
             raise err
-
-
-class NextUssdScreenSchema(Schema):
-    next_screen = fields.Str()
-
-    @validates("next_screen")
-    def validate_next_screen(self, value):
-        if value not in self.context.keys():
-            raise ValidationError(
-                "{screen} is missing in ussd journey".format(screen=value)
-            )
-        return value
-
-
-class NextUssdScreenWithConditionSchema(NextUssdScreenSchema):
-    condition = fields.Str()
-
-
-class NextUssdScreensListSchema(Schema):
-    next_screen = fields.List(fields.Nested(NextUssdScreenWithConditionSchema))
 
 
 class MenuOptionSerializer(UssdTextSerializer, NextUssdScreenSerializer):

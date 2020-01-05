@@ -1,5 +1,5 @@
 from ussd.core import UssdHandlerAbstract, UssdResponse
-from django.core.paginator import Paginator
+from ussd.paginator import Paginator
 import textwrap
 from ussd.graph import Link, Vertex
 import typing
@@ -168,9 +168,9 @@ class MenuScreen(UssdHandlerAbstract):
     def show_ussd_content(self):
         if not self.raw_text:
             self.ussd_request.session['_ussd_state']['page'] = 1
-        return self._render_django_page(1)
+        return self._render_page(1)
 
-    def _render_django_page(self, index):
+    def _render_page(self, index):
         return self.paginator.page(index).object_list[0]
 
     def get_paginator(self):
@@ -254,13 +254,13 @@ class MenuScreen(UssdHandlerAbstract):
                 new_page_number = page.next_page_number()
                 self.ussd_request.session['_ussd_state']['page'] = \
                     new_page_number
-                return UssdResponse(self._render_django_page(new_page_number))
+                return UssdResponse(self._render_page(new_page_number))
             elif self.ussd_request.input.strip() == '00' and \
                     page.has_previous():
                 new_page_number = page.previous_page_number()
                 self.ussd_request.session['_ussd_state']['page'] = \
                     new_page_number
-                return UssdResponse(self._render_django_page(new_page_number))
+                return UssdResponse(self._render_page(new_page_number))
         next_screen = self.evaluate_input()
         if next_screen:
             return self.route_options(next_screen)
@@ -352,7 +352,7 @@ class MenuScreen(UssdHandlerAbstract):
         return UssdResponse(
             self._add_end_line(
                 self.get_text(self.error_message)) +
-            self._render_django_page(1)
+            self._render_page(1)
         )
 
     def _with_items(self, text, value, items, start_index):

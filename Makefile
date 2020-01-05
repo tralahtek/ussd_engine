@@ -13,6 +13,7 @@ python_unittest_command = -m unittest discover
 test_command = $(coverage_command) $(python_unittest_command) $(report_coverage_command)
 
 test:
+	@echo '$(test_command)'
 	@docker-compose run --service-port app bash -c '$(test_command)'
 
 base_image:

@@ -1,15 +1,12 @@
 -r default.txt
 gunicorn==19.6.0
-psycopg2==2.6.2
 sphinx==1.5.1
 sphinx-autobuild==0.6.0
 sphinx_rtd_theme==0.1.9
 coverage==4.1
 codacy-coverage==1.2.18
-dj-database-url==0.4.1
 freezegun==0.3.11
 setuptools>=27
-django-cors-headers==2.4.0
 boto3==1.9.87
 awscli==1.16.15
 ipdb==0.12.2

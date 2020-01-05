@@ -1,5 +1,5 @@
 from ussd.core import UssdResponse
-from django.utils.encoding import force_text
+from ussd.utils.encoding import force_text
 import re
 from ussd.screens.menu_screen import MenuScreen
 from ussd.graph import Link, Vertex

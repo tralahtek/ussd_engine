@@ -3,8 +3,6 @@ This module is involved in testing Menu screen only
 """
 from collections import OrderedDict
 
-from django.test import override_settings
-
 from ussd.tests import UssdTestCase
 
 

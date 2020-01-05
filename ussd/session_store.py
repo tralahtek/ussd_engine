@@ -76,7 +76,7 @@ class CreateError(Exception):
 
 class UpdateError(Exception):
     """
-    Occurs if Django tries to update a session that was deleted.
+    Occurs if ussd tries to update a session that was deleted.
     """
 
 

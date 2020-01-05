@@ -4,18 +4,17 @@ from datetime import datetime
 
 from unittest import TestCase
 from freezegun import freeze_time
-from rest_framework import serializers
-
 from ussd import defaults as ussd_airflow_variables
 from ussd.core import _registered_ussd_handlers, \
     UssdHandlerAbstract, MissingAttribute, \
     InvalidAttribute, UssdRequest, convert_error_response_to_mermaid_error
 from ussd.tests import UssdTestCase
 from ussd.utilities import datetime_to_string, string_to_datetime
+from marshmallow import Schema, fields
 
 
-class SampleSerializer(serializers.Serializer):
-    text = serializers.CharField()
+class SampleSerializer(Schema):
+    text = fields.Str(required=True)
 
 
 class TestHandlerRegistration(TestCase):

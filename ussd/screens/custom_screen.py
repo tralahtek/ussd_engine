@@ -1,36 +1,46 @@
 from ussd.core import UssdHandlerAbstract, UssdHandlerMetaClass
-from ussd.screens.serializers import UssdBaseSerializer
-from rest_framework import serializers
 from ussd.utilities import str_to_class
 import typing
 from ussd.graph import Link, Vertex
+from ussd.screens.schema import UssdBaseScreenSchema
+from marshmallow import fields, INCLUDE, ValidationError, validates_schema
 
 
-class CustomScreenSerializer(UssdBaseSerializer):
-    screen_obj = serializers.CharField(max_length=255)
+class ScreenObjField(fields.Field):
 
-    @staticmethod
-    def validate_screen_obj(value):
+    def _deserialize(
+        self,
+        value: typing.Any,
+        attr: typing.Optional[str],
+        data: typing.Optional[typing.Mapping[str, typing.Any]],
+        **kwargs
+    ):
         try:
             screen_obj = str_to_class(value)
         except Exception as e:
-            raise serializers.ValidationError(str(e))
+            raise ValidationError(str(e))
         else:
             if not isinstance(screen_obj, UssdHandlerMetaClass):
-                raise serializers.ValidationError(
+                raise ValidationError(
                     "Screen object should be of type UssdHandlerAbstract"
                 )
             return screen_obj
 
-    def validate(self, data):
-        data = super(CustomScreenSerializer, self).validate(data)
+
+class CustomScreenSchema(UssdBaseScreenSchema):
+
+    screen_obj = ScreenObjField(required=True)
+
+    class Meta:
+        unknown = INCLUDE
+
+    @validates_schema
+    def validate_custom_schema(self, data, **kwargs):
         screen_obj = data['screen_obj']
         if hasattr(screen_obj, 'serializer'):
-            validation = screen_obj.serializer(data=self.initial_data,
-                                               context=self.context)
-            if not validation.is_valid():
-                raise serializers.ValidationError(validation.errors)
-        return data
+            schema = screen_obj.serializer(context=self.context)
+            schema.load(data=data)
+
 
 
 class CustomScreen(UssdHandlerAbstract):
@@ -91,7 +101,7 @@ class CustomScreen(UssdHandlerAbstract):
             .. literalinclude:: .././ussd/tests/sample_screen_definition/valid_menu_screen_conf.yml
     """
     screen_type = "custom_screen"
-    serializer = CustomScreenSerializer
+    serializer = CustomScreenSchema
 
     def __init__(self, *args, **kwargs):
         super(CustomScreen, self).__init__(*args, **kwargs)

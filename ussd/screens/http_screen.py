@@ -1,21 +1,23 @@
 from ussd.core import UssdHandlerAbstract
-from ussd.screens.serializers import NextUssdScreenSerializer
-from rest_framework import serializers
 from ussd.tasks import http_task
 import json
 from ussd.graph import Link, Vertex
-
-class HttpScreenConfSerializer(serializers.Serializer):
-    method = serializers.ChoiceField(
-        ("post", "get", "put", "delete")
-    )
-    url = serializers.CharField(max_length=255)
+from marshmallow import Schema, fields, validate, INCLUDE
+from ussd.screens.schema import UssdBaseScreenSchema, NextUssdScreenSchema
 
 
-class HttpScreenSerializer(NextUssdScreenSerializer):
-    session_key = serializers.CharField()
-    synchronous = serializers.BooleanField(required=False)
-    http_request = HttpScreenConfSerializer()
+class HttpScreenConfSchema(Schema):
+    method = fields.Str(required=True, validate=validate.OneOf(("post", "get", "put", "delete")))
+    url = fields.Str(required=True)
+
+    class Meta:
+        unknown = INCLUDE
+
+
+class HttpScreenSchema(UssdBaseScreenSchema, NextUssdScreenSchema):
+    session_key = fields.Str(required=True)
+    synchronous = fields.Bool(required=False)
+    http_request = fields.Nested(HttpScreenConfSchema, required=True)
 
 
 class HttpScreen(UssdHandlerAbstract):
@@ -58,7 +60,7 @@ class HttpScreen(UssdHandlerAbstract):
         .. literalinclude:: .././ussd/tests/sample_screen_definition/valid_http_screen_conf.yml
     """
     screen_type = "http_screen"
-    serializer = HttpScreenSerializer
+    serializer = HttpScreenSchema
 
     def handle(self):
         http_request_conf = self.render_request_conf(

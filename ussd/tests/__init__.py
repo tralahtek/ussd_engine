@@ -52,7 +52,11 @@ class UssdTestCase(object):
                 self.assertEqual(is_valid, expected_validation, error_message)
 
                 for key, value in expected_errors.items():
-                    self.assertDictEqual(error_message[key], value, key)
+                    args = (value, error_message[key], key)
+                    if isinstance(value, dict):
+                        self.assertDictEqual(*args)
+                    else:
+                        self.assertEqual(*args)
 
                 self.assertDictEqual(error_message,
                                      expected_errors)

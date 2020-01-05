@@ -12,3 +12,4 @@ celery>=4.0.0rc3
 PyConfigure>=0.5.9
 django-annoying==0.10.3
 attrs==18.2.0
+marshmallow>=3.3.0

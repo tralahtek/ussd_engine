@@ -1,10 +1,8 @@
-from rest_framework import serializers
-
 from ussd.core import UssdHandlerAbstract
 from ussd.graph import Link, Vertex
-from ussd.screens.serializers import UssdBaseSerializer, \
-    NextUssdScreenSerializer
+from ussd.screens.schema import UssdBaseScreenSchema, NextUssdScreenSchema
 from ussd.tests import UssdTestCase
+from marshmallow import fields, INCLUDE
 
 
 class InvalidCustomHandler(object):
@@ -30,8 +28,11 @@ class SampleCustomHandler1(UssdHandlerAbstract):
         ]
 
 
-class SampleSerializer(UssdBaseSerializer, NextUssdScreenSerializer):
-    input_identifier = serializers.CharField(max_length=100)
+class SampleSerializer(UssdBaseScreenSchema, NextUssdScreenSchema):
+    input_identifier = fields.Str(required=True)
+
+    class Meta:
+        unknown = INCLUDE
 
 
 class SampleCustomHandlerWithSerializer(UssdHandlerAbstract):

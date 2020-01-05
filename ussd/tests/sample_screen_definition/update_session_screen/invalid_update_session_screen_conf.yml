@@ -17,5 +17,4 @@ screen_three:
   next_screen: screen_one
   values_to_update:
     - expression: "{{True}}"
-      a: b
 

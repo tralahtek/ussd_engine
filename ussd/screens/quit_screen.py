@@ -1,6 +1,5 @@
 from ussd.core import UssdHandlerAbstract, UssdResponse
-from ussd.screens.serializers import UssdContentBaseSerializer
-from ussd import defaults as ussd_airflow_variables
+from ussd.screens.schema import UssdContentBaseSchema
 from ussd.graph import Link
 import typing
 
@@ -16,7 +15,7 @@ class QuitScreen(UssdHandlerAbstract):
         .. literalinclude:: .././ussd/tests/sample_screen_definition/valid_quit_screen_conf.yml
     """
     screen_type = "quit_screen"
-    serializer = UssdContentBaseSerializer
+    serializer = UssdContentBaseSchema
 
     def handle(self):
         # set session has expired

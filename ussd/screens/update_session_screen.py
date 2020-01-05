@@ -1,21 +1,22 @@
 from ussd.core import UssdHandlerAbstract
-from ussd.screens.serializers import UssdBaseSerializer, \
-    NextUssdScreenSerializer
-from rest_framework import serializers
 from ussd.graph import Link, Vertex
 import json
+from marshmallow import Schema, fields
+from ussd.screens.schema import UssdBaseScreenSchema, NextUssdScreenSchema, WithItemSchema
 
 
-class UpdateSessionExpressionSerializer(serializers.Serializer):
-    expression = serializers.CharField(max_length=255, required=False)
-    key = serializers.CharField(max_length=255)
-    value = serializers.CharField(max_length=255)
+class UpdateSessionExpressionSchema(Schema):
+    expression = fields.Str(required=False)
+    key = fields.Str(required=True)
+    value = fields.Str(required=True)
 
 
-class UpdateSessionSerializer(UssdBaseSerializer, NextUssdScreenSerializer):
-    values_to_update = serializers.ListField(
-        child=UpdateSessionExpressionSerializer()
+class UpdateSessionSchema(UssdBaseScreenSchema, NextUssdScreenSchema, WithItemSchema):
+    values_to_update = fields.List(
+        fields.Nested(UpdateSessionExpressionSchema),
+        required=True
     )
+
 
 
 class UpdateSessionScreen(UssdHandlerAbstract):
@@ -45,7 +46,7 @@ class UpdateSessionScreen(UssdHandlerAbstract):
 
     """
     screen_type = "update_session_screen"
-    serializer = UpdateSessionSerializer
+    serializer = UpdateSessionSchema
 
     def handle(self):
 

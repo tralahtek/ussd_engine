@@ -6,42 +6,12 @@ import typing
 from marshmallow import validates_schema, fields, ValidationError
 from ussd.screens.schema import UssdContentBaseSchema, \
     MenuOptionSchema, NextUssdScreenSchema, \
-    UssdTextSchema, UssdTextField
+    UssdTextSchema, UssdTextField, WithDictSchema, WithItemSchema
 
 
-class WithItemField(fields.Field):
-
-    def _deserialize(
-        self,
-        value: typing.Any,
-        attr: typing.Optional[str],
-        data: typing.Optional[typing.Mapping[str, typing.Any]],
-        **kwargs
-    ):
-        if isinstance(value, list):
-            return value
-        return value
-
-
-class WithDictField(fields.Field):
-
-    def _deserialize(
-            self,
-            value: typing.Any,
-            attr: typing.Optional[str],
-            data: typing.Optional[typing.Mapping[str, typing.Any]],
-            **kwargs
-    ):
-        if isinstance(value, dict):
-            return value
-        return value
-
-
-class ItemsSchema(UssdTextSchema, NextUssdScreenSchema):
+class ItemsSchema(UssdTextSchema, NextUssdScreenSchema, WithDictSchema, WithItemSchema):
     value = fields.Str(required=True)
     session_key = fields.Str(required=True)
-    with_items = WithItemField(required=False, default=None)
-    with_dict = WithDictField(required=False, default=None)
 
     @validates_schema(pass_many=True, skip_on_field_errors=False)
     def validate_options(self, data, **kwargs):

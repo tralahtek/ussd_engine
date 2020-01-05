@@ -1,18 +1,19 @@
 from ussd.core import UssdHandlerAbstract
-from ussd.screens.serializers import UssdBaseSerializer, \
-    NextUssdScreenSerializer
-from rest_framework import serializers
 from ussd.graph import Link, Vertex
+from ussd.screens.schema import UssdBaseScreenSchema, NextUssdScreenSchema, NextUssdScreenField, WithItemSchema
+from marshmallow import fields, Schema
 
 
-class RouterOptionSerializer(NextUssdScreenSerializer):
-    expression = serializers.CharField(max_length=255)
+class RouterOptionSchema(NextUssdScreenSchema):
+    expression = fields.Str(required=True)
 
 
-class RouterSerializer(UssdBaseSerializer):
-    router_options = serializers.ListField(
-        child=RouterOptionSerializer()
+class RouterSchema(UssdBaseScreenSchema, WithItemSchema):
+    router_options = fields.List(
+        fields.Nested(RouterOptionSchema),
+        required=True
     )
+    default_next_screen = NextUssdScreenField(required=False)
 
 
 class RouterScreen(UssdHandlerAbstract):
@@ -53,7 +54,7 @@ class RouterScreen(UssdHandlerAbstract):
     """
 
     screen_type = "router_screen"
-    serializer = RouterSerializer
+    serializer = RouterSchema
 
     def handle(self):
         return self.route_options(

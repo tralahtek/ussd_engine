@@ -13,14 +13,13 @@ from urllib.parse import unquote
 
 import requests
 from jinja2 import Environment
-from rest_framework.serializers import SerializerMetaclass
 from structlog import get_logger
 
 from ussd import defaults as ussd_airflow_variables
 from ussd import utilities
 from ussd.tasks import report_session
 from .graph import Graph, Link, Vertex, convert_graph_to_mermaid_text
-from .screens.serializers import UssdBaseSerializer
+from ussd.screens.schema import UssdBaseScreenSchema
 from ussd.store.journey_store import JourneyStore
 from ussd.store.journey_store.YamlJourneyStore import YamlJourneyStore
 from simplekv import KeyValueStore
@@ -268,11 +267,11 @@ class UssdHandlerMetaClass(type):
                             attribute, name)
                     )
 
-            if not isinstance(attr['serializer'], SerializerMetaclass) and not isinstance(attr['serializer'], SchemaMeta):
+            if not isinstance(attr['serializer'], SchemaMeta):
                 raise InvalidAttribute(
                     "serializer should be a "
                     "instance of {serializer}".format(
-                        serializer=SerializerMetaclass)
+                        serializer=SchemaMeta)
                 )
             _registered_ussd_handlers[attr['screen_type']] = cls
 
@@ -458,23 +457,9 @@ class UssdHandlerAbstract(object, metaclass=UssdHandlerMetaClass):
     @classmethod
     def validate(cls, screen_name: str, ussd_content: dict) -> (bool, dict):
         screen_content = ussd_content[screen_name]
-
-        # todo remove serializer completely
-        if isinstance(cls.serializer, SerializerMetaclass):
-            # adding screen name in context might be needed by validator
-            ussd_content['screen_name'] = screen_name
-            validation = cls.serializer(data=screen_content,
-                                        context=ussd_content)
-            if validation.is_valid():
-                del ussd_content['screen_name']
-                return True, {}
-            else:
-                del ussd_content['screen_name']
-                return False, validation.errors
-        else:
-            schema = cls.serializer(context=ussd_content)
-            errors = schema.validate(screen_content)
-            return False if errors else True, errors
+        schema = cls.serializer(context=ussd_content)
+        errors = schema.validate(screen_content)
+        return False if errors else True, errors
 
     @staticmethod
     def _contains_vars(data):
@@ -761,16 +746,13 @@ class UssdEngine(object):
             screen_type = screen_content.get('type')
 
             # all screen should have type field.
-            serialize = UssdBaseSerializer(data=screen_content,
-                                           context=ussd_content)
-            base_validation = serialize.is_valid()
+            base_schema = UssdBaseScreenSchema(context=ussd_content)
+            base_errors = base_schema.validate(dict(type=screen_type))
 
-            if serialize.errors:
+            if base_errors:
                 errors.update(
-                    {screen_name: serialize.errors}
+                    {screen_name: base_errors}
                 )
-
-            if not base_validation:
                 is_valid = False
                 continue
 

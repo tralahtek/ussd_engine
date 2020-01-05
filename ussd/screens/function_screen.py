@@ -1,11 +1,42 @@
 from ussd.core import UssdHandlerAbstract
-from ussd.screens.serializers import NextUssdScreenSerializer
-from rest_framework import serializers
 import importlib
 from ussd.graph import Link, Vertex
+from ussd.screens.schema import NextUssdScreenSchema
+from marshmallow import fields, ValidationError, INCLUDE
+import typing
 
 
-class FunctionScreenSerializer(NextUssdScreenSerializer):
+class FunctionField(fields.Field):
+
+    def _deserialize(
+        self,
+        value: typing.Any,
+        attr: typing.Optional[str],
+        data: typing.Optional[typing.Mapping[str, typing.Any]],
+        **kwargs
+    ):
+        split_path = value.split('.')
+        if len(split_path) <= 1:
+            raise ValidationError(
+                "Module name where function is located not given"
+            )
+        function_name = split_path[-1]
+        module_name = '.'.join(value.split('.')[:-1])
+        try:
+            module = importlib.import_module(module_name)
+        except ImportError:
+            raise ValidationError(
+                "Module {0} does not exist".format(module_name)
+            )
+
+        if not hasattr(module, function_name):
+            raise ValidationError(
+                "Function {0} does not exist".format(value)
+            )
+        return module
+
+
+class FunctionScreenSerializer(NextUssdScreenSchema):
     """
     Fields used to create this screen:
 
@@ -18,29 +49,11 @@ class FunctionScreenSerializer(NextUssdScreenSerializer):
         Once your function has been called this it goes to the
         screen specified in next_screen
     """
-    session_key = serializers.CharField()
-    function = serializers.CharField()
+    session_key = fields.Str(required=True)
+    function = FunctionField(required=True)
 
-    @staticmethod
-    def validate_function(value):
-        split_path = value.split('.')
-        if len(split_path) <= 1:
-            raise serializers.ValidationError(
-                "Module name where function is located not given"
-            )
-        function_name = split_path[-1]
-        module_name = '.'.join(value.split('.')[:-1])
-        try:
-            module = importlib.import_module(module_name)
-        except ImportError:
-            raise serializers.ValidationError(
-                "Module {0} does not exist".format(module_name)
-            )
-
-        if not hasattr(module, function_name):
-            raise serializers.ValidationError(
-                "Function {0} does not exist".format(value)
-            )
+    class Meta:
+        unknown = INCLUDE
 
 
 class FunctionScreen(UssdHandlerAbstract):

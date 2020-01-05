@@ -14,10 +14,16 @@ class ValidateResponseSerializerSchema(Schema):
     expression = fields.Str()
 
 
+class RetryMechanismSchema(Schema):
+    max_retries = fields.Integer(required=True)
+
+
 class UssdReportSessionSchema(Schema):
     session_key = fields.Str(validate=validate.Length(max=100), required=True)
     validate_response = fields.List(fields.Nested(ValidateResponseSerializerSchema), required=True)
     request_conf = fields.Dict(required=True)
+    retry_mechanism = fields.Nested(RetryMechanismSchema, required=False)
+    async_parameters = fields.Dict(required=False)
 
 
 class PaginatorConfigSchema(Schema):

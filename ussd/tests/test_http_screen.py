@@ -13,11 +13,11 @@ class TestHttpScreen(UssdTestCase.BaseUssdTestCase):
         ),
         http_screen_invalid_method=dict(
             http_request=dict(
-                method=['"done" is not a valid choice.'],
+                method=['Must be one of: post, get, put, delete.'],
             )
         ),
         http_screen_invalid_synchronous=dict(
-            synchronous=['"not boolean" is not a valid boolean.']
+            synchronous=['Not a valid boolean.']
         )
     )
 

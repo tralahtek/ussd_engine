@@ -1,32 +1,17 @@
 from marshmallow import Schema, fields, validates, ValidationError, validate
-import typing
-
-
-class UssdTextField(fields.Field):
-    """
-    Ussd text that's going to be displayed to the user.
-    example
-
-    text: This is the text that is going to be shown
-
-    To display multi language
-
-    text:
-        en: This the text in english
-        sw: this the text in swahili
-        default: en
-    """
-
-    def _serialize(self, value, attr, obj, **kwargs):
-        if not isinstance(value, dict):
-            return {
-                'en': value,
-                'default': 'en'}
-        return value
+from ussd.screens.fields import UssdTextField, NextUssdScreenField, WithDictField, WithItemField
 
 
 class UssdBaseScreenSchema(Schema):
     type = fields.Str(required=True)
+
+    @validates("type")
+    def validate_type(self, value):
+        # to avoid cyclic import
+        from ussd.core import _registered_ussd_handlers
+        if value not in _registered_ussd_handlers.keys():
+            raise ValidationError("Invalid screen type not supported")
+        return value
 
 
 class UssdTextSchema(Schema):
@@ -35,20 +20,6 @@ class UssdTextSchema(Schema):
 
 class UssdContentBaseSchema(UssdBaseScreenSchema, UssdTextSchema):
     pass
-
-
-class NextUssdScreenField(fields.Field):
-
-    def _deserialize(
-        self,
-        value: typing.Any,
-        attr: typing.Optional[str],
-        data: typing.Optional[typing.Mapping[str, typing.Any]],
-        **kwargs
-    ):
-        if not isinstance(value, list):
-            return [{"condition": "true", "next_screen": value}]
-        return value
 
 
 class NextUssdScreenSchema(Schema):
@@ -76,3 +47,11 @@ class MenuOptionSchema(UssdTextSchema, NextUssdScreenSchema):
 
 class MenuSchema(Schema):
     options = fields.List(fields.Nested(MenuOptionSchema), required=True)
+
+
+class WithItemSchema(Schema):
+    with_items = WithItemField(required=False, default=None)
+
+
+class WithDictSchema(Schema):
+    with_dict = WithDictField(required=False, default=None)

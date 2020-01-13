@@ -1,4 +1,4 @@
-from ussd.version import VERSION
+from version import VERSION
 from ussd.tests import UssdTestCase
 
 

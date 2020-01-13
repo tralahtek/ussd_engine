@@ -1,6 +1,6 @@
 from setuptools import setup, find_packages
 import os
-from ussd.version import VERSION
+from version import VERSION
 
 
 def _strip_comments(l):

@@ -1,2 +1,3 @@
 include default.txt
+include version.py
 recursive-include ussd/tests/sample_screen_definition *

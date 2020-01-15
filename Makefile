@@ -1,4 +1,4 @@
-version_file=./ussd/version.py
+version_file=./ussd_version/version.py
 report_coverage_command="bash <(curl -s https://codecov.io/bash) && python-codacy-coverage -r coverage.xml"
 dev_tools=docker run -e PYPI_PASSWORD=$(PYPI_PASSWORD) -e PYPI_USER=$(PYPI_USER) -v '$(PWD):/usr/src/app' mwaaas/dev_tool_pypi:latest
 
@@ -28,6 +28,6 @@ create_dynamodb_table:
 
 deploy:
 	$(dev_tools) set_version $(version_file) $(version)
-	docker-compose run app python setup.py sdist
+	docker-compose run --no-deps app python setup.py sdist
 	$(dev_tools) publish
 	$(dev_tools) reset_version $(version_file)

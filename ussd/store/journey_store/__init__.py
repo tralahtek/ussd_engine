@@ -51,7 +51,7 @@ class JourneyStore(object, metaclass=abc.ABCMeta):
 
         # version and editor mode should not be false
         if not (version or edit_mode):
-            raise TypeError("version is required if its not in editor mode")
+            raise ValidationError("version is required if its not in editor mode")
 
         if edit_mode:
             version = self.edit_mode_version
@@ -66,7 +66,7 @@ class JourneyStore(object, metaclass=abc.ABCMeta):
             from ussd.core import UssdEngine
             is_valid, errors = UssdEngine.validate_ussd_journey(journey)
             if not is_valid:
-                raise ValidationError("invalid journey")
+                raise ValidationError(errors, "journey")
 
         # now create journey
         return self._save(name, journey, version)

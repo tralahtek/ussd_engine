@@ -46,7 +46,7 @@ class BaseTestCase(TestCase):
         journey_store_parameter_validation.return_value = {}
         journey_store_init_mock.return_value = None
 
-        JourneyStoreApi(self.driver_config).save("test_save", self.journey, random_key_word="random_key_word")
+        JourneyStoreApi(driver_config=self.driver_config).save("test_save", self.journey, random_key_word="random_key_word")
 
         journey_store_parameter_validation.assert_called_once_with(
             journey_store_save_mock, "test_save", self.journey, random_key_word="random_key_word"
@@ -93,7 +93,7 @@ class BaseTestCase(TestCase):
         self.assertEqual(b, 1)
 
     def test_crud(self):
-        store = JourneyStoreApi(self.driver_config)
+        store = JourneyStoreApi(driver_config=self.driver_config)
 
         name = "foo"
         version = "0.0.0"
@@ -111,7 +111,7 @@ class BaseTestCase(TestCase):
 
     def test_handle_action(self):
 
-        store = JourneyStoreApi(self.driver_config)
+        store = JourneyStoreApi(driver_config=self.driver_config)
 
         name = "foo"
         version = "0.0.1"
@@ -159,7 +159,7 @@ class BaseTestCase(TestCase):
     def test_post_alias_to_save(self, journey_store_save_mock, journey_store_parameter_validation):
         journey_store_parameter_validation.return_value = {}
 
-        JourneyStoreApi(self.driver_config).handle_action(action="post", name="test_save", journey=self.journey)
+        JourneyStoreApi(driver_config=self.driver_config).handle_action(action="post", name="test_save", journey=self.journey)
 
         journey_store_save_mock.assert_called_once_with(
             name="test_save", journey=self.journey
@@ -170,7 +170,7 @@ class BaseTestCase(TestCase):
     def test_put_alias_to_save(self, journey_store_save_mock, journey_store_parameter_validation):
         journey_store_parameter_validation.return_value = {}
 
-        JourneyStoreApi(self.driver_config).handle_action(action="put", name="test_save", journey=self.journey)
+        JourneyStoreApi(driver_config=self.driver_config).handle_action(action="put", name="test_save", journey=self.journey)
 
         journey_store_save_mock.assert_called_once_with(
             name="test_save", journey=self.journey

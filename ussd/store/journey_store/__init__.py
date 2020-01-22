@@ -77,15 +77,15 @@ class JourneyStore(object, metaclass=abc.ABCMeta):
 
 class JourneyStoreApi(object):
 
-    def __init__(self, driver_config=None):
+    def __init__(self, 
+                 driver: typing.Mapping[str, typing.Any] = "ussd.store.journey_store.YamlJourneyStore.YamlJourneyStore",
+                 driver_config: typing.Dict = None):
+        
         self.driver_config = {} \
             if driver_config is None else driver_config
+        self.driver = driver
 
-        self.driver = "ussd.store.journey_store.YamlJourneyStore.YamlJourneyStore" \
-            if not self.driver_config.get("driver") \
-            else self.driver_config.get("driver")
-
-        if not isinstance(self.driver, JourneyStore):
+        if not inspect.isclass(driver):
             if not isinstance(self.driver, str):
                 raise ValidationError(
                     "driver should either be an instance of "

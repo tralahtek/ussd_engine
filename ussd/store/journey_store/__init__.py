@@ -4,6 +4,11 @@ Any engine that implements this interface can be integrated with journey store.
 """
 from ussd.exceptions import ValidationError
 import abc
+import inspect
+from copy import deepcopy
+from ussd.utils.module_loading import import_string
+import typing
+from marshmallow.exceptions import ValidationError as MashmallowValidationError
 
 
 class JourneyStore(object, metaclass=abc.ABCMeta):
@@ -65,4 +70,93 @@ class JourneyStore(object, metaclass=abc.ABCMeta):
     def delete(self, name, version=None):
         return self._delete(name, version)
 
+
+class JourneyStoreApi(object):
+
+    def __init__(self, driver_config=None):
+        self.driver_config = {} \
+            if driver_config is None else driver_config
+
+        self.driver = "ussd.store.journey_store.YamlJourneyStore.YamlJourneyStore" \
+            if not self.driver_config.get("driver") \
+            else self.driver_config.get("driver")
+
+        if not isinstance(self.driver, JourneyStore):
+            if not isinstance(self.driver, str):
+                raise ValidationError(
+                    "driver should either be an instance of "
+                    "driver store or a string pointing to the store")
+            else:
+                self.driver = import_string(self.driver)
+
+        if not inspect.isclass(self.driver):
+            raise ValidationError("driver should be a class ")
+
+        # initiate the driver
+        self.driver = self.driver(**self.driver_config)
+
+    journey_method_names = ("save", "delete", "get", "all", "flush")
+
+    def __getattr__(self, name):
+        if name in JourneyStoreApi.journey_method_names:
+            return self._actual_function(getattr(self.driver, name))
+        else:
+            return super(JourneyStoreApi, self).__getattribute__(name)
+
+    def _actual_function(self, journey_store_method):
+        def wrapper(*args, **kwargs):
+            errors = self._parameter_validation(journey_store_method, *args, **kwargs)
+            if errors:
+                raise ValidationError(errors)
+            return journey_store_method(*args, **kwargs)
+        return wrapper
+
+    def handle_action(self, **kwargs):
+
+        action = kwargs.pop('action', '')
+
+        if not action:
+            raise MashmallowValidationError("This field is required", "action")
+
+        # For easy development should accept post and convert it to save
+        if action in ('post', 'put'):
+            action = 'save'
+
+        if action not in JourneyStoreApi.journey_method_names:
+            raise MashmallowValidationError(
+                "action '{0}' is not allowed, "
+                "only this methods are allowed; {1}".format(
+                    action,
+                    ", ".join(JourneyStoreApi.journey_method_names),
+                )
+                , 'action')
+
+        return getattr(self, action)(**kwargs)
+
+    @staticmethod
+    def _parameter_validation(method, *args, **kwargs) -> typing.Dict:
+
+        assert inspect.isfunction(method) or inspect.ismethod(method)
+
+        errors = {}
+
+        parameters = list(inspect.signature(method).parameters.values())
+
+        method_kwargs = deepcopy(kwargs)
+        method_args = list(deepcopy(args))
+
+        for i in parameters:
+            if len(method_args) > 0:
+                method_args = method_args[1:]
+                continue
+            if i.name not in method_kwargs.keys():
+                if i.default == i.empty:
+                    errors[i.name] = ["This field is required"]
+            else:
+                del method_kwargs[i.name]
+
+        for i in method_kwargs:
+            errors[i] = ["This field is not required"]
+
+        return errors
 

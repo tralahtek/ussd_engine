@@ -2,13 +2,12 @@
 Customer journey are stored in a document store.
 Any engine that implements this interface can be integrated with journey store.
 """
-from ussd.exceptions import ValidationError
 import abc
 import inspect
 from copy import deepcopy
 from ussd.utils.module_loading import import_string
 import typing
-from marshmallow.exceptions import ValidationError as MashmallowValidationError
+from marshmallow.exceptions import ValidationError
 
 
 class JourneyStore(object, metaclass=abc.ABCMeta):
@@ -38,7 +37,12 @@ class JourneyStore(object, metaclass=abc.ABCMeta):
     def get(self, name: str, version=None, screen_name=None, edit_mode=False, propagate_error=True):
         if edit_mode:
             version = self.edit_mode_version
-        return self._get(name, version, screen_name)
+        results = self._get(name, version, screen_name)
+
+        if propagate_error and results is None:
+            raise ValidationError(
+                "Journey with name {0} and version {1} does not exist".format(name, version))
+        return results
 
     def all(self, name: str):
         return self._all(name)
@@ -116,14 +120,14 @@ class JourneyStoreApi(object):
         action = kwargs.pop('action', '')
 
         if not action:
-            raise MashmallowValidationError("This field is required", "action")
+            raise ValidationError("This field is required", "action")
 
         # For easy development should accept post and convert it to save
         if action in ('post', 'put'):
             action = 'save'
 
         if action not in JourneyStoreApi.journey_method_names:
-            raise MashmallowValidationError(
+            raise ValidationError(
                 "action '{0}' is not allowed, "
                 "only this methods are allowed; {1}".format(
                     action,

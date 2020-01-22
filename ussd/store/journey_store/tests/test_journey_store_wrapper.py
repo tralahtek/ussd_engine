@@ -2,7 +2,7 @@ from unittest import TestCase
 from ussd.store.journey_store import JourneyStoreApi
 from unittest import mock
 from copy import deepcopy
-from marshmallow import ValidationError as MashmallowValidationError
+from marshmallow import ValidationError
 
 b = 0
 
@@ -107,7 +107,7 @@ class BaseTestCase(TestCase):
         store.delete(name=name)
 
         # confirm journey has been deleted
-        self.assertIsNone(store.get(name=name, version=version))
+        self.assertRaises(ValidationError, store.get, name=name, version=version)
 
     def test_handle_action(self):
 
@@ -127,10 +127,10 @@ class BaseTestCase(TestCase):
         store.handle_action(action="delete", name=name)
 
         # confirm journey has been deleted
-        self.assertIsNone(store.get(name=name, version=version))
+        self.assertRaises(ValidationError, store.get, name=name, version=version)
 
         # validate it action should be provided
-        with self.assertRaises(MashmallowValidationError) as validation_err:
+        with self.assertRaises(ValidationError) as validation_err:
             # get journey without specifying the action
             store.handle_action(name=name, version=version)
 
@@ -142,7 +142,7 @@ class BaseTestCase(TestCase):
         )
 
         # test with invalid action
-        with self.assertRaises(MashmallowValidationError) as validation_err:
+        with self.assertRaises(ValidationError) as validation_err:
             # get journey with invalid action
             store.handle_action(action="does_not_exist", name=name, version=version)
 

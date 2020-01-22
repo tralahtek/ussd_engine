@@ -1,8 +1,8 @@
-from ussd.exceptions import ValidationError
 from copy import deepcopy
 from ussd.core import UssdEngine
 from ussd.store.journey_store import DummyStore, DynamoDb, YamlJourneyStore
 from unittest import TestCase
+from marshmallow.exceptions import ValidationError
 
 
 class TestDriverStore:
@@ -108,7 +108,10 @@ class TestDriverStore:
 
             # testing deleting
             self.driver.delete('journey_a', version="0.0.1")
-            self.assertIsNone(self.driver.get('journey_a', version="0.0.1"))
+            self.assertIsNone(self.driver.get('journey_a', version="0.0.1", propagate_error=False))
+
+            # test getting journey that doesn't exists throws an error
+            self.assertRaises(ValidationError, self.driver.get, 'journey_a', version="0.0.1")
 
             # check that it hasn't deleted anything
             self.assertEqual(len(self.driver.all('journey_a')), 2)

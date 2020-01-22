@@ -51,7 +51,7 @@ class JourneyStore(object, metaclass=abc.ABCMeta):
 
         # version and editor mode should not be false
         if not (version or edit_mode):
-            raise TypeError("version is required if its not in editor mode")
+            raise ValidationError("version is required if its not in editor mode")
 
         if edit_mode:
             version = self.edit_mode_version
@@ -66,7 +66,7 @@ class JourneyStore(object, metaclass=abc.ABCMeta):
             from ussd.core import UssdEngine
             is_valid, errors = UssdEngine.validate_ussd_journey(journey)
             if not is_valid:
-                raise ValidationError("invalid journey")
+                raise ValidationError(errors, "journey")
 
         # now create journey
         return self._save(name, journey, version)
@@ -77,15 +77,15 @@ class JourneyStore(object, metaclass=abc.ABCMeta):
 
 class JourneyStoreApi(object):
 
-    def __init__(self, driver_config=None):
+    def __init__(self, 
+                 driver: typing.Mapping[str, typing.Any] = "ussd.store.journey_store.YamlJourneyStore.YamlJourneyStore",
+                 driver_config: typing.Dict = None):
+        
         self.driver_config = {} \
             if driver_config is None else driver_config
+        self.driver = driver
 
-        self.driver = "ussd.store.journey_store.YamlJourneyStore.YamlJourneyStore" \
-            if not self.driver_config.get("driver") \
-            else self.driver_config.get("driver")
-
-        if not isinstance(self.driver, JourneyStore):
+        if not inspect.isclass(driver):
             if not isinstance(self.driver, str):
                 raise ValidationError(
                     "driver should either be an instance of "

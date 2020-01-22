@@ -722,6 +722,9 @@ class UssdEngine(object):
         errors = {}
         is_valid = True
 
+        if not isinstance(ussd_content, dict):
+            return False, {"_schema": ["journey should be a dictionary"]}
+
         # should define initial screen
         if not 'initial_screen' in ussd_content.keys():
             is_valid = False

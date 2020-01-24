@@ -78,7 +78,7 @@ class JourneyStore(object, metaclass=abc.ABCMeta):
 class JourneyStoreApi(object):
 
     def __init__(self, 
-                 driver: typing.Mapping[str, typing.Any] = "ussd.store.journey_store.YamlJourneyStore.YamlJourneyStore",
+                 driver: typing.Union[str, typing.Any] = "ussd.store.journey_store.YamlJourneyStore.YamlJourneyStore",
                  driver_config: typing.Dict = None):
         
         self.driver_config = {} \

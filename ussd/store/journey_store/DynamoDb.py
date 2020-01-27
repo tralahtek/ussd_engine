@@ -96,11 +96,14 @@ def delete_table(table_name: str):
 
 
 class DynamoDb(JourneyStore):
+    def _all(self):
+        pass
+
     edit_mode_version = "-1"
     journeyName = "journeyName"
     version = "version"
 
-    def __init__(self, table_name, endpoint=None):
+    def __init__(self, table_name, username="default", endpoint=None):
         self.table_name = table_name
         self.table = dynamodb_table(table_name, endpoint=endpoint)
 
@@ -134,7 +137,7 @@ class DynamoDb(JourneyStore):
                 item = item.get(screen_name)
         return item or None
 
-    def _all(self, name):
+    def _get_all_journey_version(self, name):
         results = {}
         for i in self._query(name):
             version = i[self.version]

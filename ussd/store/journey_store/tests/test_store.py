@@ -7,7 +7,6 @@ from marshmallow.exceptions import ValidationError
 
 class TestDriverStore:
     class BaseDriverStoreTestCase(TestCase):
-
         maxDiff = None
 
         def setUp(self):
@@ -58,7 +57,6 @@ class TestDriverStore:
             self.driver.save(name="journey_a", journey=sample_journey_two, version="0.0.2")
             self.driver.save(name="journey_a", journey=sample_journey_three, version="0.0.3")
 
-
             # Creating journey_b
             sample_journey_b_one = deepcopy(sample_journey)
             sample_journey_b_one['end_screen']['text'] = "end screen of sample journey_b one"
@@ -92,7 +90,7 @@ class TestDriverStore:
             # test getting all the journeys
             self.assertDictEqual(
                 {"0.0.1": sample_journey_one, "0.0.2": sample_journey_two, "0.0.3": sample_journey_three},
-                self.driver.all('journey_a'))
+                self.driver.get_all_journey_version('journey_a'))
 
             # test getting the latest journey
             self.assertEqual(sample_journey_three, self.driver.get('journey_a'))
@@ -114,11 +112,11 @@ class TestDriverStore:
             self.assertRaises(ValidationError, self.driver.get, 'journey_a', version="0.0.1")
 
             # check that it hasn't deleted anything
-            self.assertEqual(len(self.driver.all('journey_a')), 2)
+            self.assertEqual(len(self.driver.get_all_journey_version('journey_a')), 2)
 
             # deleting all journeys including the versions
             self.driver.delete('journey_a')
-            self.assertEqual(len(self.driver.all('journey_a')), 0)
+            self.assertEqual(len(self.driver.get_all_journey_version('journey_a')), 0)
 
         def test_saving_journeys_thats_still_in_edit_mode(self):
             sample_journey = {
@@ -164,12 +162,145 @@ class TestDriverStore:
             self.driver.save(name='journey_a', journey=sample_journey_edit_mode, edit_mode=True)
             self.assertEqual(sample_journey_edit_mode, self.driver.get('journey_a', edit_mode=True))
 
+        def test_crud_for_multiple_users(self):
+            driver_with_user_1 = self.setup_driver(user="user_1")
+
+            driver_with_user_2 = self.setup_driver(user="user_2")
+
+            user_1 = {
+                "journey_a": {
+                    "0.0.1": {
+                        "initial_screen": {
+                            "type": "initial_screen",
+                            "next_screen": "end_screen",
+                            "default_language": "en"
+                        },
+                        "end_screen": {
+                            "type": "quit_screen",
+                            "text": "end screen for user 1 journey a 1"
+                        }
+                    },
+                    "0.0.2": {
+                        "initial_screen": {
+                            "type": "initial_screen",
+                            "next_screen": "end_screen",
+                            "default_language": "en"
+                        },
+                        "end_screen": {
+                            "type": "quit_screen",
+                            "text": "end screen for user 1 journey a version 1"
+                        }
+                    }
+                },
+                "journey_b": {
+                    "0.0.1": {
+                        "initial_screen": {
+                            "type": "initial_screen",
+                            "next_screen": "end_screen",
+                            "default_language": "en"
+                        },
+                        "end_screen": {
+                            "type": "quit_screen",
+                            "text": "end screen for user 1 journey b version 1"
+                        }
+                    }
+                }
+            }
+
+            # create journey for user one
+            driver_with_user_1.save(name="journey_a", version="0.0.1",
+                                    journey=user_1["journey_a"]["0.0.1"])
+
+            # sanity check journey was created
+            self.assertEqual(
+                driver_with_user_1.get("journey_a", version="0.0.1"),
+                user_1["journey_a"]["0.0.1"])
+
+            # check second driver can't access the journey with different user
+            self.assertRaises(ValidationError, driver_with_user_2.get, "journey_a", version="0.0.1")
+
+            # create another journey with a different version
+            driver_with_user_1.save(name="journey_a", version="0.0.2",
+                                    journey=user_1["journey_a"]["0.0.2"])
+
+            # create another journey
+            driver_with_user_1.save(name="journey_b", version="0.0.1",
+                                    journey=user_1["journey_b"]["0.0.1"])
+
+            # test getting all the journeys
+            self.assertDictEqual(
+                user_1["journey_a"],
+                driver_with_user_1.get_all_journey_version('journey_a'))
+
+            # test getting all the journeys returns for user one only
+            self.assertDictEqual(
+                user_1,
+                driver_with_user_1.all())
+
+            # now create journey for user 2
+            user_2 = {
+                "journey_a": {
+                    "0.0.1": {
+                        "initial_screen": {
+                            "type": "initial_screen",
+                            "next_screen": "end_screen",
+                            "default_language": "en"
+                        },
+                        "end_screen": {
+                            "type": "quit_screen",
+                            "text": "end screen for user 2 journey a 1"
+                        }
+                    }
+                },
+                "journey_user_2": {
+                    "0.0.1": {
+                        "initial_screen": {
+                            "type": "initial_screen",
+                            "next_screen": "end_screen",
+                            "default_language": "en"
+                        },
+                        "end_screen": {
+                            "type": "quit_screen",
+                            "text": "end screen for user 2 journey a 1"
+                        }
+                    }
+                }
+            }
+
+            driver_with_user_2.save(name="journey_a", version="0.0.1",
+                                    journey=user_2["journey_a"]['0.0.1'])
+
+            self.assertEqual(
+                driver_with_user_2.get("journey_a", version="0.0.1"),
+                user_2["journey_a"]["0.0.1"]
+            )
+
+            # create the other journey
+            driver_with_user_2.save(name="journey_user_2", version="0.0.1",
+                                    journey=user_2["journey_user_2"]['0.0.1'])
+
+            # check journey_a for user one is not equal as journey for user 2
+            self.assertNotEqual(
+                driver_with_user_1.get("journey_a", version="0.0.1"),
+                driver_with_user_2.get("journey_a", version="0.0.1"),
+            )
+
+            # test getting all the journeys
+            self.assertDictEqual(
+                user_2["journey_a"],
+                driver_with_user_2.get_all_journey_version('journey_a'))
+
+            # test getting all the journeys returns for user one only
+            self.assertDictEqual(
+                user_2,
+                driver_with_user_2.all())
+
 
 class TestDummyStore(TestDriverStore.BaseDriverStoreTestCase):
 
     @staticmethod
-    def setup_driver() -> DummyStore:
-        return DummyStore.DummyStore()
+    def setup_driver(user="default") -> DummyStore:
+        return DummyStore.DummyStore(user=user)
 
 
 class TestDynamodb(TestDriverStore.BaseDriverStoreTestCase):
@@ -183,12 +314,12 @@ class TestDynamodb(TestDriverStore.BaseDriverStoreTestCase):
     def tearDownClass(cls) -> None:
         DynamoDb.delete_table(table_name=cls.table_name)
 
-    def setup_driver(self) -> DynamoDb:
+    def setup_driver(self, user="default") -> DynamoDb:
         return DynamoDb.DynamoDb(self.table_name, "http://dynamodb:8000")
 
 
 class TestYamlJourneyStore(TestDriverStore.BaseDriverStoreTestCase):
 
     @staticmethod
-    def setup_driver() -> YamlJourneyStore:
-        return YamlJourneyStore.YamlJourneyStore()
+    def setup_driver(user="default") -> YamlJourneyStore:
+        return YamlJourneyStore.YamlJourneyStore(user=user)

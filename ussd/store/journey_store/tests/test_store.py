@@ -315,7 +315,7 @@ class TestDynamodb(TestDriverStore.BaseDriverStoreTestCase):
         DynamoDb.delete_table(table_name=cls.table_name)
 
     def setup_driver(self, user="default") -> DynamoDb:
-        return DynamoDb.DynamoDb(self.table_name, "http://dynamodb:8000")
+        return DynamoDb.DynamoDb(self.table_name, "http://dynamodb:8000", user=user)
 
 
 class TestYamlJourneyStore(TestDriverStore.BaseDriverStoreTestCase):

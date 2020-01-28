@@ -164,3 +164,5 @@ class JourneyStoreApi(object):
 
         return errors
 
+    def get_journey_store(self) -> JourneyStore:
+        return self.driver

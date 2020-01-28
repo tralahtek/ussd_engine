@@ -6,17 +6,14 @@ from copy import deepcopy
 from boto3.dynamodb.conditions import Key
 import os
 
-
 BOTO_CORE_CONFIG = os.environ.get('BOTO_CORE_CONFIG', None)
 USE_LOCAL_DYNAMODB_SERVER = os.environ.get('USE_LOCAL_DYNAMODB_SERVER', False)
 
 logger = get_logger(__name__)
 
-
 # We'll find some better way to do this.
 _DYNAMODB_CONN = None
 _DYNAMODB_TABLE = {}
-
 
 # defensive programming if config has been defined
 # make sure it's the correct format.
@@ -61,16 +58,15 @@ def dynamodb_table(table: str, endpoint=None):
 
 
 def create_table(table_name: str):
-
     params = {
         'TableName': table_name,
         'KeySchema': [
-            {'AttributeName': "journeyName", 'KeyType': "HASH"},  # Partition key
-            {'AttributeName': "version", 'KeyType': "RANGE"}  # Sort key
+            {'AttributeName': "username", 'KeyType': "HASH"},  # Partition key
+            {'AttributeName': "journeyAndVersion", 'KeyType': "RANGE"}  # Sort key
         ],
         'AttributeDefinitions': [
-            {'AttributeName': "journeyName", 'AttributeType': "S"},
-            {'AttributeName': "version", 'AttributeType': "S"}
+            {'AttributeName': "username", 'AttributeType': "S"},
+            {'AttributeName': "journeyAndVersion", 'AttributeType': "S"}
         ],
         'ProvisionedThroughput': {
             'ReadCapacityUnits': 10,
@@ -95,14 +91,40 @@ def delete_table(table_name: str):
     )
 
 
+def append_dynamo_key_with_user(func):
+    def wrapper(*args, **kwargs):
+        # we need to append the parameter name with user
+        # first parameter is instance i.e self
+        # second parameter is name
+        if not args[1].startswith("{}#".format(args[0].user)):
+            args = list(args)
+            args[1] = "{0}#{1}".format(args[0].user, args[1])
+            args = tuple(args)
+        return func(*args, **kwargs)
+
+    return wrapper
+
+
 class DynamoDb(JourneyStore):
     edit_mode_version = "-1"
-    journeyName = "journeyName"
-    version = "version"
+    hash_key = "username"
+    sort_key = "journeyAndVersion"
 
-    def __init__(self, table_name, endpoint=None):
+    def __init__(self, table_name, endpoint=None, user="default"):
         self.table_name = table_name
         self.table = dynamodb_table(table_name, endpoint=endpoint)
+        self.user = user
+
+    @staticmethod
+    def _sort_key_journey(name):
+        return "{0}#".format(name)
+
+    @staticmethod
+    def _sort_key_version(version):
+        return "{0}#".format(version)
+
+    def _generate_sort_key(self, name, version):
+        return "{0}{1}".format(self._sort_key_journey(name), self._sort_key_version(version))
 
     def _get(self, name, version, screen_name, **kwargs):
         screen_kwarg = {}
@@ -111,50 +133,52 @@ class DynamoDb(JourneyStore):
 
         if version is None:
             response = self.table.query(
-                KeyConditionExpression=Key(self.journeyName).eq(name) & Key(self.version).gt(self.edit_mode_version),
+                KeyConditionExpression=Key(self.hash_key).eq(self.user) &
+                                       Key(self.sort_key).begins_with(self._sort_key_journey(name)),
                 **kwargs
             )
             item = response.get("Items")[-1]
         else:
             key = {
-                self.journeyName: name,
-                self.version: version
+                self.hash_key: self.user,
+                self.sort_key: self._generate_sort_key(name, version)
             }
 
             response = self.table.get_item(Key=key, **screen_kwarg)
             item = response.get('Item')
 
         if item:
-            if item.get(self.journeyName):
-                del item[self.journeyName]
-            if item.get(self.version):
-                del item[self.version]
+            if item.get(self.hash_key):
+                del item[self.hash_key]
+            if item.get(self.sort_key):
+                del item[self.sort_key]
 
             if screen_name:
                 item = item.get(screen_name)
         return item or None
 
-    def _all(self, name):
+    def _get_all_journey_version(self, name):
         results = {}
         for i in self._query(name):
-            version = i[self.version]
-            del i[self.journeyName]
-            del i[self.version]
+            version = i[self.sort_key].split("#")[1]
+            del i[self.hash_key]
+            del i[self.sort_key]
             results[version] = i
         return results
 
     def _query(self, name, **kwargs):
         response = self.table.query(
-            KeyConditionExpression=Key(self.journeyName).eq(name),
+            KeyConditionExpression=Key(self.hash_key).eq(self.user) &
+                                   Key(self.sort_key).begins_with(self._sort_key_journey(name)),
             **kwargs
         )
         return response.get('Items')
 
     def _save(self, name, journey, version):
         item = {
-                self.journeyName: name,
-                self.version: version
-            }
+            self.hash_key: self.user,
+            self.sort_key: self._generate_sort_key(name, version)
+        }
         item.update(journey)
 
         response = self.table.put_item(
@@ -164,24 +188,42 @@ class DynamoDb(JourneyStore):
     def _delete(self, name, version=None):
         items = [
             {
-                self.journeyName: name,
-                self.version: version
+                self.hash_key: self.user,
+                self.sort_key: self._generate_sort_key(name, version)
             }
         ]
         if version is None:
             items = self._query(name,
-                                **{"ProjectionExpression": "{0}, {1}".format(self.journeyName, self.version)})
+                                **{"ProjectionExpression": "{0}, {1}".format(self.hash_key, self.sort_key)})
 
         with self.table.batch_writer() as batch:
             for i in items:
                 batch.delete_item(
                     Key={
-                        self.journeyName: i[self.journeyName],
-                        self.version: i[self.version]
+                        self.hash_key: i[self.hash_key],
+                        self.sort_key: i[self.sort_key]
                     }
                 )
+
+    def _all(self):
+        response = self.table.query(
+            KeyConditionExpression=Key(self.hash_key).eq(self.user)
+        )
+
+        results = dict()
+        for i in response.get('Items'):
+            name, version, others = i[self.sort_key].split("#")
+
+            if not results.get(name):
+                results[name] = {}
+
+            del i[self.hash_key]
+            del i[self.sort_key]
+            results[name][version] = i
+
+        return results
 
     def flush(self):
         all_records = self.table.scan()
         for i in all_records['Items']:
-            self._delete(i[self.journeyName], i[self.version])
+            self._delete(i[self.hash_key], i[self.sort_key])

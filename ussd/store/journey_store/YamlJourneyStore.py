@@ -68,8 +68,10 @@ class YamlJourneyStore(JourneyStore):
     Loader used for loading and using journeys in a yaml file
     """
 
-    def __init__(self, journey_directory="./.journeys"):
-        self.journey_directory = os.path.abspath(journey_directory)
+    def __init__(self, user="default", journey_directory="./.journeys"):
+        self.journey_directory = os.path.join(
+            os.path.abspath(journey_directory),
+            user)
 
         if not os.path.isdir(self.journey_directory):
             os.makedirs(self.journey_directory)
@@ -105,7 +107,7 @@ class YamlJourneyStore(JourneyStore):
             return journey[screen_name]
         return journey
 
-    def _all(self, name):
+    def _get_all_journey_version(self, name):
         directory = self._get_directory(name)
 
         if os.path.isdir(directory):
@@ -127,6 +129,12 @@ class YamlJourneyStore(JourneyStore):
         self._get_or_create_directory(name)
         with open(file_path, 'w') as outfile:
             yaml.dump(journey, outfile, default_flow_style=False)
+
+    def _all(self):
+        results = {}
+        for i in os.listdir(self.journey_directory):
+            results[i] = self._get_all_journey_version(i)
+        return results
 
     @staticmethod
     def _delete_folder(path):

@@ -8,40 +8,49 @@ class DummyStore(JourneyStore):
     """
     This store should not be used in production only meant to test the interface
     """
-
+    
+    def __init__(self, user="default"):
+        self.user = user
+        if not store.get(self.user):
+            store[user] = {}
+        self.store = store[user]
+            
     def _get(self, name, version, screen_name, **kwargs):
         if version == 'edit_mode':
-            return store.get('edit_mode', {}).get(name)
-        if store.get(name):
+            return self.store.get('edit_mode', {}).get(name)
+        if self.store.get(name):
             if version is None:  # get the latest journey created
-                journey = store[name][next(reversed(store[name]))]
+                journey = self.store[name][next(reversed(self.store[name]))]
             else:
-                journey = store[name].get(version)
+                journey = self.store[name].get(version)
             if screen_name is not None:
                 return journey.get(screen_name)
             return journey
         return None
 
-    def _all(self, name):
-        return store.get(name, {})
+    def _get_all_journey_version(self, name):
+        return self.store.get(name, {})
 
     def _save(self, name, journey, version):
         if version == self.edit_mode_version:
-            store['edit_mode'] = {name: journey}
+            self.store['edit_mode'] = {name: journey}
         else:
-            if store.get(name):
-                store[name][version] = journey
+            if self.store.get(name):
+                self.store[name][version] = journey
             else:
-                store[name] = OrderedDict({version: journey})
+                self.store[name] = OrderedDict({version: journey})
         return journey
 
     def _delete(self, name, version=None):
-        if store.get(name):
-            if store[name].get(version):
-                del store[name][version]
+        if self.store.get(name):
+            if self.store[name].get(version):
+                del self.store[name][version]
             else:
-                del store[name]
-
+                del self.store[name]
+    
+    def _all(self):
+        return self.store
+    
     def flush(self):
         pass
 

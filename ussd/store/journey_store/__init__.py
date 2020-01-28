@@ -19,7 +19,7 @@ class JourneyStore(object, metaclass=abc.ABCMeta):
         pass
 
     @abc.abstractmethod
-    def _all(self, name):
+    def _all(self):
         pass
 
     @abc.abstractmethod
@@ -28,6 +28,10 @@ class JourneyStore(object, metaclass=abc.ABCMeta):
 
     @abc.abstractmethod
     def _delete(self, name, version=None):
+        pass
+
+    @abc.abstractmethod
+    def _get_all_journey_version(self, name):
         pass
 
     @abc.abstractmethod
@@ -44,8 +48,11 @@ class JourneyStore(object, metaclass=abc.ABCMeta):
                 "Journey with name {0} and version {1} does not exist".format(name, version))
         return results
 
-    def all(self, name: str):
-        return self._all(name)
+    def all(self):
+        return self._all()
+
+    def get_all_journey_version(self, name):
+        return self._get_all_journey_version(name)
 
     def save(self, name: str, journey: dict, version=None, edit_mode=False):
 

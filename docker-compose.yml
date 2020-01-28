@@ -58,6 +58,7 @@ services:
       - TEST_VARIABLE=variable_test
       - ENVIRONMENT=sample_variable_two
       - DYNAMODB_TABLE=journeyTable
+      - "AWS_DEFAULT_REGION=eu-west-1"
     labels:
       - "traefik.frontend.rule=PathPrefix:/"
       - "traefik.backend=web"
@@ -111,7 +112,10 @@ services:
       - "traefik.enable=false"
 
   dynamodb:
-    image: cnadiminti/dynamodb-local:2017-02-16
+    image: amazon/dynamodb-local:1.11.477
+    command: -jar DynamoDBLocal.jar -inMemory -sharedDb
+    environment:
+      - "AWS_DEFAULT_REGION=eu-west-1"
     ports:
       - 8781:8000
 
@@ -120,6 +124,7 @@ services:
     depends_on:
       - dynamodb
     environment:
+      - "AWS_DEFAULT_REGION=eu-west-1"
       - DYNAMO_ENDPOINT=http://dynamodb:8000
     ports:
       - 8001:8001

@@ -132,6 +132,8 @@ class JourneyStoreApi(object):
         # For easy development should accept post and convert it to save
         if action in ('post', 'put'):
             action = 'save'
+        if action == 'get' and len(kwargs) == 0:
+            action = 'all'
 
         if action not in JourneyStoreApi.journey_method_names:
             raise ValidationError(
@@ -171,3 +173,5 @@ class JourneyStoreApi(object):
 
         return errors
 
+    def get_journey_store(self) -> JourneyStore:
+        return self.driver

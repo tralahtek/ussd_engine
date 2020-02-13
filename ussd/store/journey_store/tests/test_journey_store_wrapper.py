@@ -13,6 +13,8 @@ def helper(a, name="mwas"):
 
 
 class BaseTestCase(TestCase):
+    maxDiff = None
+
     journey = {
         "initial_screen": {
             "type": "initial_screen",
@@ -122,6 +124,18 @@ class BaseTestCase(TestCase):
         # get journey that was created
         journey = store.handle_action(action="get", name=name, version=version)
         self.assertEqual(self.journey, journey)
+
+        # create another journey
+        journey2 = deepcopy(self.journey)
+        journey2["end_screen"]["text"] = "journey 2"
+        store.handle_action(action="save", name="bar", journey=journey2, version=version)
+        # get journey that was created
+        journey = store.handle_action(action="get", name="bar", version=version)
+        self.assertEqual(journey2, journey)
+
+        # now get all journeys
+        journeys = store.handle_action(action="get")
+        self.assertDictEqual({"foo": {version: self.journey}, "bar": {version: journey2}}, journeys)
 
         # delete journey that was created
         store.handle_action(action="delete", name=name)

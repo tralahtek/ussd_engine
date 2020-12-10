@@ -789,7 +789,11 @@ def convert_error_response_to_mermaid_error(error_response: dict, errors=None, p
 
     for key, value in error_response.items():
         if isinstance(value, list):
-            if len(value) == 1 and value[0] == "This field is required.":
+            if len(value) == 1 and key == '_schema':
+                    errors.append(
+                        dict(path=paths, message=value[0])
+                    )
+            elif len(value) == 1 and value[0] == "This field is required.":
                 errors.append(
                     dict(path=paths, message=value[0].replace('This field', key))
                 )

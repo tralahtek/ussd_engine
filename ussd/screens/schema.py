@@ -57,6 +57,11 @@ class WithItemSchema(Schema):
 class WithDictSchema(Schema):
     with_dict = WithDictField(required=False, default=None)
 
+class PaginationConfigSchema(Schema):
+    ussd_text_limit = fields.Integer(required=False, default=180)
+    more_option = UssdTextField(required=False)
+    back_option = UssdTextField(required=False)
+
 
 class UnionField(fields.Field):
     """Field that deserializes multi-type input data to app-level objects."""

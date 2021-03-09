@@ -81,7 +81,7 @@ def get_mermaid_link_line(link: Link):
 
 def get_mermaid_node_text(vertex: Vertex):
     text = vertex.id if vertex.text == "" else \
-        '{id}["{text}"]'.format(id=vertex.id, text=vertex.text)
+        '{id}["{text}"]'.format(id=vertex.id, text=vertex.text.replace('"', '#quot;'))
 
     # replace new line with <br>
     text = text.replace('\n', '<br>')
